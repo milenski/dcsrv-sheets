@@ -1,0 +1,307 @@
+import { useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { 
+  ArrowLeft, 
+  Download,
+  FileSpreadsheet,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Archive,
+  Eye
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+
+// Mock data
+const mockRun = {
+  id: "run-123",
+  template: {
+    id: "1",
+    name: "Invoice Extractor",
+  },
+  status: "completed" as const,
+  startedAt: "Jan 12, 2026 10:30 AM",
+  completedAt: "Jan 12, 2026 10:32 AM",
+  documents: [
+    { id: "doc1", name: "invoice-001.pdf", status: "completed", pages: 2 },
+    { id: "doc2", name: "invoice-002.pdf", status: "completed", pages: 1 },
+    { id: "doc3", name: "invoice-003.pdf", status: "completed", pages: 3 },
+    { id: "doc4", name: "invoice-004.pdf", status: "failed", pages: 0, error: "Could not parse document" },
+    { id: "doc5", name: "invoice-005.pdf", status: "completed", pages: 1 },
+  ],
+  extractedData: {
+    invoices: [
+      { invoiceNumber: "INV-001", date: "2026-01-10", vendor: "Acme Corp", amount: 1250.00, tax: 125.00, total: 1375.00 },
+      { invoiceNumber: "INV-002", date: "2026-01-08", vendor: "TechSupply Inc", amount: 890.50, tax: 89.05, total: 979.55 },
+      { invoiceNumber: "INV-003", date: "2026-01-05", vendor: "Office Depot", amount: 245.00, tax: 24.50, total: 269.50 },
+      { invoiceNumber: "INV-005", date: "2026-01-01", vendor: "CloudServices LLC", amount: 599.00, tax: 59.90, total: 658.90 },
+    ],
+    lineItems: [
+      { invoiceNumber: "INV-001", description: "Consulting Services", quantity: 10, unitPrice: 125.00, amount: 1250.00 },
+      { invoiceNumber: "INV-002", description: "Laptop Stand", quantity: 5, unitPrice: 89.00, amount: 445.00 },
+      { invoiceNumber: "INV-002", description: "USB Hub", quantity: 5, unitPrice: 89.11, amount: 445.55 },
+      { invoiceNumber: "INV-003", description: "Office Supplies", quantity: 1, unitPrice: 245.00, amount: 245.00 },
+      { invoiceNumber: "INV-005", description: "Cloud Storage (Annual)", quantity: 1, unitPrice: 599.00, amount: 599.00 },
+    ],
+  },
+};
+
+const statusIcons = {
+  completed: CheckCircle2,
+  failed: AlertCircle,
+  processing: Clock,
+};
+
+const statusColors = {
+  completed: "text-green-600",
+  failed: "text-destructive",
+  processing: "text-amber-600",
+};
+
+export default function RunResults() {
+  const { runId } = useParams();
+  const navigate = useNavigate();
+  const [activeSheet, setActiveSheet] = useState("invoices");
+
+  const completedDocs = mockRun.documents.filter(d => d.status === "completed").length;
+  const failedDocs = mockRun.documents.filter(d => d.status === "failed").length;
+  const totalPages = mockRun.documents.reduce((sum, d) => sum + d.pages, 0);
+
+  return (
+    <div className="min-h-full bg-muted/30">
+      {/* Header */}
+      <div className="border-b bg-background">
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => navigate("/app/history")}
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-xl font-semibold">Extraction Results</h1>
+                  <Badge variant="default" className="capitalize">
+                    {mockRun.status}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Template: <Link to={`/app/templates/${mockRun.template.id}`} className="hover:text-foreground underline">{mockRun.template.name}</Link>
+                </p>
+              </div>
+            </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Download Excel (.xlsx)
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Download CSV (.csv)
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Archive className="w-4 h-4 mr-2" />
+                  Download All (ZIP)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
+        {/* Summary Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="shadow-card">
+            <CardContent className="py-4">
+              <p className="text-sm text-muted-foreground">Documents</p>
+              <p className="text-2xl font-semibold">{mockRun.documents.length}</p>
+            </CardContent>
+          </Card>
+          <Card className="shadow-card">
+            <CardContent className="py-4">
+              <p className="text-sm text-muted-foreground">Successful</p>
+              <p className="text-2xl font-semibold text-green-600">{completedDocs}</p>
+            </CardContent>
+          </Card>
+          <Card className="shadow-card">
+            <CardContent className="py-4">
+              <p className="text-sm text-muted-foreground">Failed</p>
+              <p className="text-2xl font-semibold text-destructive">{failedDocs}</p>
+            </CardContent>
+          </Card>
+          <Card className="shadow-card">
+            <CardContent className="py-4">
+              <p className="text-sm text-muted-foreground">Pages Processed</p>
+              <p className="text-2xl font-semibold">{totalPages}</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Documents Status */}
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle className="text-base">Documents</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {mockRun.documents.map((doc) => {
+                const StatusIcon = statusIcons[doc.status as keyof typeof statusIcons];
+                return (
+                  <div 
+                    key={doc.id}
+                    className={cn(
+                      "flex items-center justify-between p-3 rounded-lg border",
+                      doc.status === "failed" && "border-destructive/30 bg-destructive/5"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <StatusIcon className={cn("w-5 h-5", statusColors[doc.status as keyof typeof statusColors])} />
+                      <div>
+                        <p className="font-medium text-sm">{doc.name}</p>
+                        {doc.status === "completed" ? (
+                          <p className="text-xs text-muted-foreground">{doc.pages} pages</p>
+                        ) : doc.error && (
+                          <p className="text-xs text-destructive">{doc.error}</p>
+                        )}
+                      </div>
+                    </div>
+                    {doc.status === "completed" && (
+                      <Button variant="ghost" size="sm">
+                        <Eye className="w-4 h-4 mr-1" />
+                        Preview
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Extracted Data */}
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle className="text-base">Extracted Data</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={activeSheet} onValueChange={setActiveSheet}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="invoices">
+                  Invoices ({mockRun.extractedData.invoices.length})
+                </TabsTrigger>
+                <TabsTrigger value="lineItems">
+                  Line Items ({mockRun.extractedData.lineItems.length})
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="invoices">
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Invoice #</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Vendor</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead className="text-right">Tax</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {mockRun.extractedData.invoices.map((row, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="font-medium">{row.invoiceNumber}</TableCell>
+                          <TableCell>{row.date}</TableCell>
+                          <TableCell>{row.vendor}</TableCell>
+                          <TableCell className="text-right">${row.amount.toFixed(2)}</TableCell>
+                          <TableCell className="text-right">${row.tax.toFixed(2)}</TableCell>
+                          <TableCell className="text-right font-medium">${row.total.toFixed(2)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="lineItems">
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Invoice #</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead className="text-right">Qty</TableHead>
+                        <TableHead className="text-right">Unit Price</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {mockRun.extractedData.lineItems.map((row, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="font-medium">{row.invoiceNumber}</TableCell>
+                          <TableCell>{row.description}</TableCell>
+                          <TableCell className="text-right">{row.quantity}</TableCell>
+                          <TableCell className="text-right">${row.unitPrice.toFixed(2)}</TableCell>
+                          <TableCell className="text-right font-medium">${row.amount.toFixed(2)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        {/* Metadata */}
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle className="text-base">Run Details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground">Started</p>
+                <p className="font-medium">{mockRun.startedAt}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Completed</p>
+                <p className="font-medium">{mockRun.completedAt}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
