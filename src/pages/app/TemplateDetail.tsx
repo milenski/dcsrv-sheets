@@ -1,0 +1,546 @@
+import { useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { 
+  ArrowLeft, 
+  Play, 
+  Settings, 
+  FileSpreadsheet,
+  Pencil,
+  Trash2,
+  MoreHorizontal,
+  Check,
+  X,
+  ChevronRight,
+  MessageSquare
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+
+// Mock template data
+const mockTemplate = {
+  id: "1",
+  name: "Invoice Extractor",
+  description: "Extract invoice data including amounts, dates, and vendor info",
+  outputMode: "new" as const,
+  storeData: true,
+  prompt: "You are extracting invoice data. Be precise with numbers and dates. Always verify totals match line items.",
+  sheets: [
+    { 
+      id: "sheet1", 
+      name: "Invoices", 
+      enabled: true,
+      prompt: "Focus on header-level invoice information.",
+      columns: [
+        { id: "col1", name: "Invoice Number", enabled: true, prompt: "" },
+        { id: "col2", name: "Date", enabled: true, prompt: "Extract the invoice date in YYYY-MM-DD format." },
+        { id: "col3", name: "Vendor", enabled: true, prompt: "" },
+        { id: "col4", name: "Amount", enabled: true, prompt: "Extract the subtotal before tax." },
+        { id: "col5", name: "Tax", enabled: true, prompt: "" },
+        { id: "col6", name: "Total", enabled: true, prompt: "" },
+      ]
+    },
+    { 
+      id: "sheet2", 
+      name: "Line Items", 
+      enabled: true,
+      prompt: "",
+      columns: [
+        { id: "col7", name: "Invoice Number", enabled: true, prompt: "" },
+        { id: "col8", name: "Description", enabled: true, prompt: "" },
+        { id: "col9", name: "Quantity", enabled: false, prompt: "" },
+        { id: "col10", name: "Unit Price", enabled: true, prompt: "" },
+        { id: "col11", name: "Amount", enabled: true, prompt: "" },
+      ]
+    },
+  ],
+  lastRun: "2 hours ago",
+  runsCount: 24,
+  createdAt: "Jan 5, 2026",
+  updatedAt: "Jan 10, 2026",
+};
+
+export default function TemplateDetail() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [template, setTemplate] = useState(mockTemplate);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(template.name);
+  const [templatePrompt, setTemplatePrompt] = useState(template.prompt);
+
+  const enabledSheets = template.sheets.filter(s => s.enabled);
+  const totalColumns = template.sheets.flatMap(s => s.columns).filter(c => c.enabled).length;
+
+  const handleSaveName = () => {
+    setTemplate(prev => ({ ...prev, name: editedName }));
+    setIsEditingName(false);
+  };
+
+  const toggleSheet = (sheetId: string) => {
+    setTemplate(prev => ({
+      ...prev,
+      sheets: prev.sheets.map(s => 
+        s.id === sheetId ? { ...s, enabled: !s.enabled } : s
+      )
+    }));
+  };
+
+  return (
+    <div className="min-h-full bg-muted/30">
+      {/* Header */}
+      <div className="border-b bg-background">
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => navigate("/app/templates")}
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              
+              {isEditingName ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    className="h-9 w-64"
+                    autoFocus
+                  />
+                  <Button size="icon" variant="ghost" onClick={handleSaveName}>
+                    <Check className="w-4 h-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" onClick={() => setIsEditingName(false)}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <h1 className="text-xl font-semibold">{template.name}</h1>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={() => setIsEditingName(true)}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => navigate(`/app/templates/${id}/run`)}>
+                <Play className="w-4 h-4 mr-2" />
+                Run Extraction
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <MoreHorizontal className="w-5 h-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>Duplicate template</DropdownMenuItem>
+                  <DropdownMenuItem>Export configuration</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem 
+                        className="text-destructive focus:text-destructive"
+                        onSelect={(e) => e.preventDefault()}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete template
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete template?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete "{template.name}" and all its configuration.
+                          This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onClick={() => navigate("/app/templates")}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+
+          {/* Quick stats */}
+          <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
+            <span>{enabledSheets.length} sheets</span>
+            <span>•</span>
+            <span>{totalColumns} columns</span>
+            <span>•</span>
+            <span>Last run {template.lastRun}</span>
+            <span>•</span>
+            <span>{template.runsCount} total runs</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="max-w-6xl mx-auto px-6 py-6">
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="sheets">Sheets</TabsTrigger>
+            <TabsTrigger value="prompts">Prompts</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="shadow-card lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="text-base">Template Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label className="text-muted-foreground text-sm">Description</Label>
+                    <p className="text-foreground mt-1">
+                      {template.description || "No description provided."}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                    <div>
+                      <Label className="text-muted-foreground text-sm">Output Mode</Label>
+                      <p className="text-foreground mt-1">
+                        {template.outputMode === "new" 
+                          ? "New file per document" 
+                          : "Append to single workbook"
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-sm">Store Data</Label>
+                      <p className="text-foreground mt-1">
+                        {template.storeData ? "Enabled" : "Disabled"}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-card">
+                <CardHeader>
+                  <CardTitle className="text-base">Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button 
+                    className="w-full justify-start" 
+                    onClick={() => navigate(`/app/templates/${id}/run`)}
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Run Extraction
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => {}}
+                  >
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Edit Prompts
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => {}}
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Enabled Sheets */}
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle className="text-base">Enabled Sheets</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {enabledSheets.map((sheet) => {
+                    const enabledCols = sheet.columns.filter(c => c.enabled).length;
+                    return (
+                      <Link
+                        key={sheet.id}
+                        to={`/app/templates/${id}/sheets/${sheet.id}`}
+                        className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <FileSpreadsheet className="w-5 h-5 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium">{sheet.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {enabledCols} columns enabled
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {sheet.prompt && (
+                            <Badge variant="secondary" className="text-xs">
+                              Has prompt
+                            </Badge>
+                          )}
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Sheets Tab */}
+          <TabsContent value="sheets" className="space-y-6">
+            <Card className="shadow-card">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">All Sheets</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {enabledSheets.length} of {template.sheets.length} enabled
+                  </p>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {template.sheets.map((sheet) => {
+                    const enabledCols = sheet.columns.filter(c => c.enabled).length;
+                    return (
+                      <div
+                        key={sheet.id}
+                        className={cn(
+                          "flex items-center justify-between p-4 rounded-lg border transition-colors",
+                          sheet.enabled ? "bg-background" : "bg-muted/30"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Switch 
+                            checked={sheet.enabled}
+                            onCheckedChange={() => toggleSheet(sheet.id)}
+                          />
+                          <div>
+                            <p className={cn(
+                              "font-medium",
+                              !sheet.enabled && "text-muted-foreground"
+                            )}>
+                              {sheet.name}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {enabledCols} / {sheet.columns.length} columns
+                            </p>
+                          </div>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          asChild
+                        >
+                          <Link to={`/app/templates/${id}/sheets/${sheet.id}`}>
+                            Configure
+                            <ChevronRight className="w-4 h-4 ml-1" />
+                          </Link>
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Prompts Tab */}
+          <TabsContent value="prompts" className="space-y-6">
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle className="text-base">Template-Level Prompt</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Global instructions applied to all extractions using this template
+                </p>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  value={templatePrompt}
+                  onChange={(e) => setTemplatePrompt(e.target.value)}
+                  placeholder="Enter global instructions for the AI..."
+                  rows={4}
+                />
+                <Button className="mt-4" size="sm">Save Prompt</Button>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle className="text-base">Sheet & Column Prompts</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Click on a sheet to configure its specific prompts
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {template.sheets.filter(s => s.enabled).map((sheet) => {
+                    const columnsWithPrompts = sheet.columns.filter(c => c.enabled && c.prompt).length;
+                    return (
+                      <Link
+                        key={sheet.id}
+                        to={`/app/templates/${id}/sheets/${sheet.id}`}
+                        className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                      >
+                        <div>
+                          <p className="font-medium">{sheet.name}</p>
+                          <div className="flex items-center gap-3 mt-1">
+                            {sheet.prompt ? (
+                              <Badge variant="default" className="text-xs">Sheet prompt set</Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-xs">No sheet prompt</Badge>
+                            )}
+                            <span className="text-xs text-muted-foreground">
+                              {columnsWithPrompts} column prompts
+                            </span>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-6">
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle className="text-base">Template Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label>Template Name</Label>
+                  <Input 
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Textarea 
+                    defaultValue={template.description}
+                    placeholder="Describe what this template extracts..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-lg border">
+                  <div>
+                    <Label className="font-medium">Output Mode</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {template.outputMode === "new" 
+                        ? "Create new Excel file per document" 
+                        : "Append rows into a single workbook"
+                      }
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm">Change</Button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-lg border">
+                  <div>
+                    <Label className="font-medium">Store processed data</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Save extracted data in the system for future reference
+                    </p>
+                  </div>
+                  <Switch defaultChecked={template.storeData} />
+                </div>
+
+                <Button>Save Changes</Button>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-card border-destructive/20">
+              <CardHeader>
+                <CardTitle className="text-base text-destructive">Danger Zone</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Delete this template</p>
+                    <p className="text-sm text-muted-foreground">
+                      Once deleted, this template cannot be recovered
+                    </p>
+                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive">Delete Template</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete template?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete "{template.name}" and all its configuration.
+                          This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onClick={() => navigate("/app/templates")}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+}
