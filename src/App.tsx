@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { AppLayout } from "@/components/app/AppLayout";
+import { AuthProvider } from "@/hooks/useAuth";
 import Home from "./pages/Home";
 import Pricing from "./pages/Pricing";
 import Examples from "./pages/Examples";
@@ -37,36 +38,40 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          {/* Marketing site */}
-          <Route element={<Layout><Home /></Layout>} path="/" />
-          <Route element={<Layout><Pricing /></Layout>} path="/pricing" />
-          <Route element={<Layout><Examples /></Layout>} path="/examples" />
-          <Route element={<Layout><Help /></Layout>} path="/help" />
-          <Route element={<Layout><Privacy /></Layout>} path="/privacy" />
-          <Route element={<Layout><Terms /></Layout>} path="/terms" />
-          <Route element={<Layout><Security /></Layout>} path="/security" />
-          <Route element={<Layout><Login /></Layout>} path="/login" />
-          <Route element={<Layout><Signup /></Layout>} path="/signup" />
+        <AuthProvider>
+          <Routes>
+            {/* Marketing site */}
+            <Route element={<Layout><Home /></Layout>} path="/" />
+            <Route element={<Layout><Pricing /></Layout>} path="/pricing" />
+            <Route element={<Layout><Examples /></Layout>} path="/examples" />
+            <Route element={<Layout><Help /></Layout>} path="/help" />
+            <Route element={<Layout><Privacy /></Layout>} path="/privacy" />
+            <Route element={<Layout><Terms /></Layout>} path="/terms" />
+            <Route element={<Layout><Security /></Layout>} path="/security" />
+            
+            {/* Auth pages - no header/footer, standalone */}
+            <Route element={<Login />} path="/login" />
+            <Route element={<Signup />} path="/signup" />
 
-          {/* App routes */}
-          <Route path="/app" element={<AppLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="templates" element={<Templates />} />
-            <Route path="templates/new" element={<TemplateNew />} />
-            <Route path="templates/:id" element={<TemplateDetail />} />
-            <Route path="templates/:id/sheets/:sheetId" element={<SheetDetail />} />
-            <Route path="templates/:id/sheets/:sheetId/columns/:columnId" element={<ColumnEditor />} />
-            <Route path="templates/:id/run" element={<RunExtraction />} />
-            <Route path="run" element={<RunExtraction />} />
-            <Route path="runs/:runId" element={<RunResults />} />
-            <Route path="history" element={<History />} />
-            <Route path="billing" element={<Billing />} />
-            <Route path="settings" element={<Settings />} />
-          </Route>
+            {/* App routes - protected by AppLayout */}
+            <Route path="/app" element={<AppLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="templates" element={<Templates />} />
+              <Route path="templates/new" element={<TemplateNew />} />
+              <Route path="templates/:id" element={<TemplateDetail />} />
+              <Route path="templates/:id/sheets/:sheetId" element={<SheetDetail />} />
+              <Route path="templates/:id/sheets/:sheetId/columns/:columnId" element={<ColumnEditor />} />
+              <Route path="templates/:id/run" element={<RunExtraction />} />
+              <Route path="run" element={<RunExtraction />} />
+              <Route path="runs/:runId" element={<RunResults />} />
+              <Route path="history" element={<History />} />
+              <Route path="billing" element={<Billing />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

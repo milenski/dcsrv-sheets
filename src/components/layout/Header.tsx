@@ -1,8 +1,19 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
+import { Logo } from "@/components/shared/Logo";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const navLinks = [
   { href: "/examples", label: "Examples" },
@@ -13,35 +24,20 @@ const navLinks = [
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { isAuthenticated, user, logout } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleLogout = () => {
+    logout();
+    setMobileMenuOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-hero">
-            <svg
-              className="h-5 w-5 text-primary-foreground"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="8" y1="13" x2="16" y2="13" />
-              <line x1="8" y1="17" x2="16" y2="17" />
-            </svg>
-          </div>
-          <span className="text-lg font-semibold text-foreground">
-            DocServant
-            <span className="ml-1 text-sm font-normal text-muted-foreground">
-              for Spreadsheets
-            </span>
-          </span>
-        </Link>
+        <Logo to={isAuthenticated ? "/app" : "/"} />
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-8">
@@ -60,12 +56,56 @@ export function Header() {
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/login">Login</Link>
-          </Button>
-          <Button size="sm" asChild>
-            <Link to="/signup">Try it free</Link>
-          </Button>
+          {isAuthenticated ? (
+            <>
+              <Button size="sm" asChild>
+                <Link to="/app">Open App</Link>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                    <Avatar className="h-9 w-9">
+                      <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                        {user?.initials || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{user?.name || "User"}</span>
+                      <span className="text-xs text-muted-foreground">{user?.email}</span>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/app">Dashboard</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/app/settings">Settings</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/app/billing">Billing & Usage</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/login">Login</Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link to="/signup">Try it free</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -103,16 +143,32 @@ export function Header() {
                 </Link>
               ))}
               <div className="flex flex-col gap-2 pt-4 border-t border-border mt-2">
-                <Button variant="ghost" size="sm" asChild className="justify-start">
-                  <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                    Login
-                  </Link>
-                </Button>
-                <Button size="sm" asChild>
-                  <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
-                    Try it free
-                  </Link>
-                </Button>
+                {isAuthenticated ? (
+                  <>
+                    <Button size="sm" asChild>
+                      <Link to="/app" onClick={() => setMobileMenuOpen(false)}>
+                        Open App
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={handleLogout} className="justify-start text-destructive">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Log out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="ghost" size="sm" asChild className="justify-start">
+                      <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                        Login
+                      </Link>
+                    </Button>
+                    <Button size="sm" asChild>
+                      <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
+                        Try it free
+                      </Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </nav>
           </motion.div>

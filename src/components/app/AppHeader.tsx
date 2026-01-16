@@ -1,4 +1,4 @@
-import { Bell, Search, User } from "lucide-react";
+import { Bell, Search, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,9 +11,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 export function AppHeader() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
   return (
     <header className="h-14 border-b border-border bg-background px-6 flex items-center justify-between gap-4">
       {/* Search */}
@@ -30,9 +39,16 @@ export function AppHeader() {
       {/* Right side */}
       <div className="flex items-center gap-3">
         {/* Plan Badge */}
-        <Badge variant="secondary" className="font-medium">
-          Free Plan
-        </Badge>
+        <Link to="/app/billing">
+          <Badge variant="secondary" className="font-medium cursor-pointer hover:bg-secondary/80">
+            Free Plan
+          </Badge>
+        </Link>
+
+        {/* Upgrade CTA */}
+        <Button size="sm" variant="outline" asChild className="hidden sm:inline-flex">
+          <Link to="/pricing">Upgrade</Link>
+        </Button>
 
         {/* Notifications */}
         <Button variant="ghost" size="icon" className="relative">
@@ -46,7 +62,7 @@ export function AppHeader() {
             <Button variant="ghost" className="relative h-9 w-9 rounded-full">
               <Avatar className="h-9 w-9">
                 <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                  JD
+                  {user?.initials || "U"}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -54,8 +70,8 @@ export function AppHeader() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
               <div className="flex flex-col">
-                <span className="font-medium">John Doe</span>
-                <span className="text-xs text-muted-foreground">john@example.com</span>
+                <span className="font-medium">{user?.name || "User"}</span>
+                <span className="text-xs text-muted-foreground">{user?.email}</span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -65,9 +81,13 @@ export function AppHeader() {
             <DropdownMenuItem asChild>
               <Link to="/app/billing">Billing & Usage</Link>
             </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/help">Help Center</Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild className="text-destructive focus:text-destructive">
-              <Link to="/">Log out</Link>
+            <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+              <LogOut className="w-4 h-4 mr-2" />
+              Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

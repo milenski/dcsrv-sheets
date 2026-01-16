@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Header } from "./Header";
-import { Footer } from "./Footer";
+import { SharedFooter } from "@/components/shared/SharedFooter";
 import { CookieBanner } from "@/components/CookieBanner";
 
 interface LayoutProps {
@@ -12,7 +12,7 @@ export function Layout({ children }: LayoutProps) {
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1">{children}</main>
-      <Footer />
+      <SharedFooter />
       <CookieBanner />
     </div>
   );
