@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { Logo } from "@/components/shared/Logo";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const mainNavItems = [
   { title: "Dashboard", url: "/app", icon: LayoutDashboard, end: true },
@@ -39,9 +40,14 @@ export function AppSidebar() {
   const { logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success("Successfully signed out");
+      navigate("/");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to sign out");
+    }
   };
 
   return (

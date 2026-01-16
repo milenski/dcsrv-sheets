@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogOut } from "lucide-react";
 import { useState } from "react";
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { toast } from "sonner";
 
 const navLinks = [
   { href: "/examples", label: "Examples" },
@@ -24,13 +25,20 @@ const navLinks = [
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
-  const handleLogout = () => {
-    logout();
-    setMobileMenuOpen(false);
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success("Successfully signed out");
+      setMobileMenuOpen(false);
+      navigate("/");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to sign out");
+    }
   };
 
   return (

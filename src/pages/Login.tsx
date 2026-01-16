@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Logo } from "@/components/shared/Logo";
+import { toast } from "sonner";
 
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
@@ -30,9 +31,11 @@ export default function Login() {
     
     try {
       await login(email, password);
+      toast.success("Successfully signed in!");
       navigate("/app");
-    } catch (error) {
-      console.error("Login failed:", error);
+    } catch (error: any) {
+      const errorMessage = error?.message || "Failed to sign in. Please check your credentials.";
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

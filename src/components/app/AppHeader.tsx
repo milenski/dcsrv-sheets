@@ -13,14 +13,20 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 export function AppHeader() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success("Successfully signed out");
+      navigate("/");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to sign out");
+    }
   };
 
   return (

@@ -1,58 +1,125 @@
-import { createContext, useContext, useState, ReactNode, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import type { User, Session } from "@supabase/supabase-js";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   user: { name: string; email: string; initials: string } | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    // Check localStorage for existing session
-    return localStorage.getItem("docservant_auth") === "true";
-  });
-  
-  const [user, setUser] = useState<{ name: string; email: string; initials: string } | null>(() => {
-    const stored = localStorage.getItem("docservant_user");
-    return stored ? JSON.parse(stored) : null;
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<{ name: string; email: string; initials: string } | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const login = useCallback(async (email: string, _password: string) => {
-    // Simulate login - in production this would call an API
-    const name = email.split("@")[0];
-    const initials = name.slice(0, 2).toUpperCase();
-    const userData = { name, email, initials };
+  // Helper to convert Supabase user to app user format
+  const convertUser = useCallback((supabaseUser: User | null): { name: string; email: string; initials: string } | null => {
+    if (!supabaseUser) return null;
     
-    localStorage.setItem("docservant_auth", "true");
-    localStorage.setItem("docservant_user", JSON.stringify(userData));
+    const email = supabaseUser.email || "";
+    const name = supabaseUser.user_metadata?.full_name || 
+                 supabaseUser.user_metadata?.name || 
+                 email.split("@")[0];
+    const initials = name
+      .split(" ")
+      .map(n => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
     
-    setIsAuthenticated(true);
-    setUser(userData);
+    return { name, email, initials };
   }, []);
 
-  const signup = useCallback(async (name: string, email: string, _password: string) => {
-    // Simulate signup - in production this would call an API
-    const initials = name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-    const userData = { name, email, initials };
-    
-    localStorage.setItem("docservant_auth", "true");
-    localStorage.setItem("docservant_user", JSON.stringify(userData));
-    
-    setIsAuthenticated(true);
-    setUser(userData);
-  }, []);
+  // Check for existing session on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setIsAuthenticated(true);
+          setUser(convertUser(session.user));
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const logout = useCallback(() => {
-    localStorage.removeItem("docservant_auth");
-    localStorage.removeItem("docservant_user");
+    checkSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setIsAuthenticated(true);
+        setUser(convertUser(session.user));
+      } else {
+        setIsAuthenticated(false);
+        setUser(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [convertUser]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    if (data.user) {
+      setIsAuthenticated(true);
+      setUser(convertUser(data.user));
+    }
+  }, [convertUser]);
+
+  const signup = useCallback(async (name: string, email: string, password: string) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name,
+          name: name,
+        },
+      },
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    if (data.user) {
+      setIsAuthenticated(true);
+      setUser(convertUser(data.user));
+    }
+  }, [convertUser]);
+
+  const logout = useCallback(async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      throw error;
+    }
     setIsAuthenticated(false);
     setUser(null);
   }, []);
+
+  // Don't render children until we've checked the session
+  if (loading) {
+    return null;
+  }
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, user, login, signup, logout }}>
