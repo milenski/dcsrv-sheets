@@ -8,13 +8,16 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  FileText
+  HelpCircle
 } from "lucide-react";
-import { NavLink } from "@/components/NavLink";
+import { NavLink, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
+import { Logo } from "@/components/shared/Logo";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const mainNavItems = [
   { title: "Dashboard", url: "/app", icon: LayoutDashboard, end: true },
@@ -26,10 +29,18 @@ const mainNavItems = [
 const bottomNavItems = [
   { title: "Billing & Usage", url: "/app/billing", icon: CreditCard },
   { title: "Settings", url: "/app/settings", icon: Settings },
+  { title: "Help Center", url: "/help", icon: HelpCircle },
 ];
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   return (
     <aside 
@@ -40,17 +51,7 @@ export function AppSidebar() {
     >
       {/* Logo */}
       <div className="flex items-center h-14 px-4 border-b border-sidebar-border">
-        <NavLink to="/app" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-hero flex items-center justify-center shrink-0">
-            <FileText className="w-4 h-4 text-primary-foreground" />
-          </div>
-          {!collapsed && (
-            <div className="flex flex-col">
-              <span className="font-semibold text-sm text-foreground">DocServant</span>
-              <span className="text-[10px] text-muted-foreground -mt-0.5">for Spreadsheets</span>
-            </div>
-          )}
-        </NavLink>
+        <Logo to="/app" collapsed={collapsed} />
       </div>
 
       {/* Main Navigation */}
@@ -60,12 +61,12 @@ export function AppSidebar() {
             key={item.url}
             to={item.url}
             end={item.end}
-            className={cn(
+            className={({ isActive }) => cn(
               "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
               "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-              collapsed && "justify-center px-2"
+              collapsed && "justify-center px-2",
+              isActive && "bg-sidebar-accent text-sidebar-accent-foreground"
             )}
-            activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
           >
             <item.icon className="w-5 h-5 shrink-0" />
             {!collapsed && <span>{item.title}</span>}
@@ -80,12 +81,12 @@ export function AppSidebar() {
           <NavLink
             key={item.url}
             to={item.url}
-            className={cn(
+            className={({ isActive }) => cn(
               "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
               "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-              collapsed && "justify-center px-2"
+              collapsed && "justify-center px-2",
+              isActive && "bg-sidebar-accent text-sidebar-accent-foreground"
             )}
-            activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
           >
             <item.icon className="w-5 h-5 shrink-0" />
             {!collapsed && <span>{item.title}</span>}
@@ -93,17 +94,17 @@ export function AppSidebar() {
         ))}
         
         {/* Logout */}
-        <NavLink
-          to="/"
+        <button
+          onClick={handleLogout}
           className={cn(
-            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors w-full",
             "text-muted-foreground hover:bg-destructive/10 hover:text-destructive",
             collapsed && "justify-center px-2"
           )}
         >
           <LogOut className="w-5 h-5 shrink-0" />
           {!collapsed && <span>Log out</span>}
-        </NavLink>
+        </button>
       </div>
 
       {/* Collapse Toggle */}

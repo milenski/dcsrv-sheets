@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { DocumentPreview } from "@/components/ui/DocumentPreview";
 import { DataTable } from "@/components/ui/DataTable";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Upload,
   FileSearch,
@@ -28,6 +29,8 @@ const stagger = {
 };
 
 export default function Home() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -54,12 +57,21 @@ export default function Home() {
                 No manual data entry. No more copy-paste.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Button size="lg" asChild className="gap-2">
-                  <Link to="/signup">
-                    Try it free
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </Button>
+                {isAuthenticated ? (
+                  <Button size="lg" asChild className="gap-2">
+                    <Link to="/app">
+                      Open App
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button size="lg" asChild className="gap-2">
+                    <Link to="/signup">
+                      Try it free
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </Button>
+                )}
                 <Button size="lg" variant="outline" asChild>
                   <Link to="/examples">See examples</Link>
                 </Button>
@@ -385,12 +397,21 @@ export default function Home() {
                 Start extracting structured data from your documents in minutes. No credit card required.
               </p>
               <div className="flex flex-wrap justify-center gap-4">
-                <Button size="lg" variant="secondary" asChild className="gap-2">
-                  <Link to="/signup">
-                    Try it free
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </Button>
+                {isAuthenticated ? (
+                  <Button size="lg" variant="secondary" asChild className="gap-2">
+                    <Link to="/app">
+                      Open App
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button size="lg" variant="secondary" asChild className="gap-2">
+                    <Link to="/signup">
+                      Try it free
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </Button>
+                )}
                 <Button
                   size="lg"
                   variant="ghost"

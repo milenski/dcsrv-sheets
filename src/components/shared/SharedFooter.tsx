@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Logo } from "./Logo";
 
 const footerLinks = {
   product: [
@@ -17,30 +18,41 @@ const footerLinks = {
   ],
 };
 
-export function Footer() {
+interface SharedFooterProps {
+  compact?: boolean;
+}
+
+export function SharedFooter({ compact = false }: SharedFooterProps) {
+  if (compact) {
+    return (
+      <footer className="border-t border-border bg-muted/30 py-4">
+        <div className="container flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+          <Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
+          <Link to="/examples" className="hover:text-foreground transition-colors">Examples</Link>
+          <Link to="/help" className="hover:text-foreground transition-colors">Help</Link>
+          <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+          <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+          <Link to="/security" className="hover:text-foreground transition-colors">Security</Link>
+          <a
+            href="https://docservant.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-foreground transition-colors"
+          >
+            DocServant Family
+          </a>
+        </div>
+      </footer>
+    );
+  }
+
   return (
     <footer className="border-t border-border bg-muted/30">
       <div className="container py-12 md:py-16">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-hero">
-                <svg
-                  className="h-5 w-5 text-primary-foreground"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="8" y1="13" x2="16" y2="13" />
-                  <line x1="8" y1="17" x2="16" y2="17" />
-                </svg>
-              </div>
-              <span className="text-lg font-semibold text-foreground">DocServant</span>
-            </Link>
+            <Logo to="/" />
             <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
               Turn documents into structured spreadsheets with AI-powered extraction.
             </p>

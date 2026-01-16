@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { 
   CreditCard, 
   Check,
@@ -100,7 +101,15 @@ export default function Billing() {
 
       {/* Plans */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold mb-4">Choose a Plan</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">Choose a Plan</h2>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/pricing">
+              Compare all plans
+              <ExternalLink className="w-4 h-4 ml-1" />
+            </Link>
+          </Button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {plans.map((plan) => (
             <Card 
