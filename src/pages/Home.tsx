@@ -17,6 +17,8 @@ import {
   Zap,
   Layers,
   ArrowRight,
+  Code2,
+  Webhook,
 } from "lucide-react";
 
 const fadeIn = {
@@ -133,14 +135,14 @@ export default function Home() {
                 step: "2",
                 title: "Extract",
                 description:
-                  "Our AI analyzes your document and extracts structured data based on your schema or auto-detection.",
+                  "Our AI analyzes your document and extracts structured data based on your template prompts.",
               },
               {
                 icon: Download,
                 step: "3",
                 title: "Export",
                 description:
-                  "Download your clean, organized data as Excel (.xlsx) or CSV. Ready for your workflow.",
+                  "Download as Excel, CSV, or JSON. Use our API to integrate results directly into your workflow.",
               },
             ].map((item, i) => (
               <motion.div
@@ -307,6 +309,59 @@ export default function Home() {
         </div>
       </section>
 
+      {/* API & Webhooks Section */}
+      <section className="py-16 md:py-20 bg-muted/30">
+        <div className="container">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeIn}
+            className="max-w-4xl mx-auto"
+          >
+            <div className="bg-card border border-border rounded-2xl p-8 shadow-card">
+              <div className="flex flex-col md:flex-row md:items-center gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Code2 className="w-7 h-7 text-primary" />
+                  </div>
+                  <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center -ml-4">
+                    <Webhook className="w-7 h-7 text-primary" />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold text-foreground mb-2">
+                    API + Webhooks
+                    <span className="ml-2 text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">Pro & Business</span>
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Get results as JSON and receive callbacks when processing completes. 
+                    Integrate DocServant directly into your existing systems.
+                  </p>
+                </div>
+                <div>
+                  {isAuthenticated ? (
+                    <Button asChild>
+                      <Link to="/app/developers">
+                        View API Docs
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Button asChild>
+                      <Link to="/login">
+                        Get Started
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Why It's Different */}
       <section className="py-20 md:py-28 bg-muted/30">
         <div className="container">
@@ -329,7 +384,7 @@ export default function Home() {
                 {[
                   { icon: Layers, text: "Structured extraction with custom schema mapping" },
                   { icon: Zap, text: "Batch processing for multiple documents" },
-                  { icon: FileSpreadsheet, text: "Excel & CSV export in one click" },
+                  { icon: FileSpreadsheet, text: "Excel, CSV & JSON export in one click" },
                   { icon: Shield, text: "Secure processing with no data training by default" },
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3">
