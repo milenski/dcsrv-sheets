@@ -8,7 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  HelpCircle
+  HelpCircle,
+  Code2
 } from "lucide-react";
 import { NavLink, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ const mainNavItems = [
   { title: "Templates", url: "/app/templates", icon: FileSpreadsheet },
   { title: "Run Extraction", url: "/app/run", icon: Play },
   { title: "History", url: "/app/history", icon: History },
+  { title: "Developers", url: "/app/developers", icon: Code2 },
 ];
 
 const bottomNavItems = [
