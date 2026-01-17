@@ -37,24 +37,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check for existing session on mount
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          setIsAuthenticated(true);
-          setUser(convertUser(session.user));
-        }
-      } catch (error) {
-        console.error("Error checking session:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // Listen for auth changes FIRST
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setIsAuthenticated(true);
         setUser(convertUser(session.user));
@@ -63,6 +49,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
       }
     });
+
+    // THEN check for an existing session
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (session?.user) {
+          setIsAuthenticated(true);
+          setUser(convertUser(session.user));
+        } else {
+          setIsAuthenticated(false);
+          setUser(null);
+        }
+      })
+      .catch((error) => {
+        console.error("Error checking session:", error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
 
     return () => {
       subscription.unsubscribe();
