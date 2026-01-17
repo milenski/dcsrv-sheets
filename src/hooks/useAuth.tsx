@@ -1,6 +1,4 @@
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import type { User, Session } from "@supabase/supabase-js";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -12,116 +10,88 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Storage key for persisting auth state
+const AUTH_STORAGE_KEY = "docservant_auth";
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<{ name: string; email: string; initials: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Helper to convert Supabase user to app user format
-  const convertUser = useCallback((supabaseUser: User | null): { name: string; email: string; initials: string } | null => {
-    if (!supabaseUser) return null;
+  // Check for existing session on mount
+  useEffect(() => {
+    const storedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (storedAuth) {
+      try {
+        const parsed = JSON.parse(storedAuth);
+        setUser(parsed.user);
+        setIsAuthenticated(true);
+      } catch (e) {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+      }
+    }
+    setLoading(false);
+  }, []);
+
+  const login = useCallback(async (email: string, password: string) => {
+    // Simulate network delay
+    await new Promise((resolve) => setTimeout(resolve, 500));
     
-    const email = supabaseUser.email || "";
-    const name = supabaseUser.user_metadata?.full_name || 
-                 supabaseUser.user_metadata?.name || 
-                 email.split("@")[0];
+    // Simple validation
+    if (!email || !password) {
+      throw new Error("Email and password are required");
+    }
+    
+    if (password.length < 6) {
+      throw new Error("Invalid credentials");
+    }
+
+    const name = email.split("@")[0];
     const initials = name
-      .split(" ")
-      .map(n => n[0])
+      .split(/[._-]/)
+      .map((n) => n[0])
       .join("")
       .toUpperCase()
       .slice(0, 2);
+
+    const userData = { name, email, initials };
     
-    return { name, email, initials };
+    setUser(userData);
+    setIsAuthenticated(true);
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: userData }));
   }, []);
 
-  // Check for existing session on mount
-  useEffect(() => {
-    // Listen for auth changes FIRST
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        setIsAuthenticated(true);
-        setUser(convertUser(session.user));
-      } else {
-        setIsAuthenticated(false);
-        setUser(null);
-      }
-    });
-
-    // THEN check for an existing session
-    supabase.auth
-      .getSession()
-      .then(({ data: { session } }) => {
-        if (session?.user) {
-          setIsAuthenticated(true);
-          setUser(convertUser(session.user));
-        } else {
-          setIsAuthenticated(false);
-          setUser(null);
-        }
-      })
-      .catch((error) => {
-        console.error("Error checking session:", error);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [convertUser]);
-
-  const login = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      throw error;
-    }
-
-    if (data.user) {
-      setIsAuthenticated(true);
-      setUser(convertUser(data.user));
-    }
-  }, [convertUser]);
-
   const signup = useCallback(async (name: string, email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/`;
+    // Simulate network delay
+    await new Promise((resolve) => setTimeout(resolve, 500));
     
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: name,
-          name: name,
-        },
-      },
-    });
-
-    if (error) {
-      throw error;
+    // Simple validation
+    if (!name || !email || !password) {
+      throw new Error("All fields are required");
+    }
+    
+    if (password.length < 8) {
+      throw new Error("Password must be at least 8 characters");
     }
 
-    if (data.user) {
-      setIsAuthenticated(true);
-      setUser(convertUser(data.user));
-    }
-  }, [convertUser]);
+    const initials = name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+
+    const userData = { name, email, initials };
+    
+    setUser(userData);
+    setIsAuthenticated(true);
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: userData }));
+  }, []);
 
   const logout = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      throw error;
-    }
     setIsAuthenticated(false);
     setUser(null);
+    localStorage.removeItem(AUTH_STORAGE_KEY);
   }, []);
 
   // Don't render children until we've checked the session
