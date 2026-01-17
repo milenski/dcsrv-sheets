@@ -141,13 +141,13 @@ export default function Developers() {
   };
 
   return (
-    <div className="min-h-full bg-muted/30">
+    <div className="p-6 max-w-7xl mx-auto">
       <PageHeader 
         title="Developers" 
         description="Integrate DocServant with your applications using our API and webhooks."
       />
 
-      <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
+      <div className="max-w-4xl space-y-6">
         {/* API Access Section */}
         <Card className="shadow-card">
           <CardHeader>

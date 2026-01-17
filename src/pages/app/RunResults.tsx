@@ -11,7 +11,9 @@ import {
   Eye,
   Code2,
   Copy,
-  FileJson
+  FileJson,
+  Zap,
+  ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,11 +41,12 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useApiAccess } from "@/hooks/useApiAccess";
 
-// Mock data
+// Mock data - add templateApiAccess to simulate template override
 const mockRun = {
   id: "run-123",
-  template: { id: "1", name: "Invoice Extractor" },
+  template: { id: "1", name: "Invoice Extractor", apiAccess: "inherit" as "inherit" | "enabled" | "disabled" },
   status: "completed" as const,
   startedAt: "Jan 12, 2026 10:30 AM",
   completedAt: "Jan 12, 2026 10:32 AM",
@@ -77,6 +80,7 @@ const statusColors = { completed: "text-green-600", failed: "text-destructive", 
 export default function RunResults() {
   const { runId } = useParams();
   const navigate = useNavigate();
+  const { apiEnabled } = useApiAccess();
   const [activeSheet, setActiveSheet] = useState("invoices");
   const [outputFormat, setOutputFormat] = useState<"spreadsheet" | "json">("spreadsheet");
   const [jsonDialogOpen, setJsonDialogOpen] = useState(false);
@@ -85,6 +89,11 @@ export default function RunResults() {
   const completedDocs = mockRun.documents.filter(d => d.status === "completed").length;
   const failedDocs = mockRun.documents.filter(d => d.status === "failed").length;
   const totalPages = mockRun.documents.reduce((sum, d) => sum + d.pages, 0);
+
+  // Determine effective API status for this run's template
+  const templateApiAccess = mockRun.template.apiAccess;
+  const isApiAvailable = apiEnabled && (templateApiAccess === "enabled" || templateApiAccess === "inherit");
+  const isApiDisabledByTemplate = apiEnabled && templateApiAccess === "disabled";
 
   const handleCopyJson = (json: string) => {
     navigator.clipboard.writeText(json);
@@ -244,16 +253,54 @@ export default function RunResults() {
                 </TabsContent>
               </Tabs>
             ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">Pretty-printed JSON output for all extracted data</p>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => handleCopyJson(JSON.stringify(mockRun.extractedData, null, 2))}><Copy className="w-4 h-4 mr-1" />Copy</Button>
-                    <Button variant="outline" size="sm" onClick={handleDownloadJson}><Download className="w-4 h-4 mr-1" />Download</Button>
+              <>
+                {/* API Visibility - Show warnings if API is not available */}
+                {!apiEnabled ? (
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <Zap className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium mb-1">Enable API access to fetch results as JSON via API</p>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          With API access, you can programmatically retrieve extraction results and receive webhook notifications when jobs complete.
+                        </p>
+                        <Button size="sm" onClick={() => navigate("/app/developers")}>
+                          Enable API
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <pre className="bg-muted rounded-lg p-4 text-sm overflow-auto max-h-[400px] font-mono">{JSON.stringify(mockRun.extractedData, null, 2)}</pre>
-              </div>
+                ) : isApiDisabledByTemplate ? (
+                  <div className="bg-muted/50 border rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium mb-1">API is disabled for this template</p>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          API access is enabled for your account, but this template has API access disabled. Change it in template settings.
+                        </p>
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to={`/app/templates/${mockRun.template.id}`} className="gap-2">
+                            <ExternalLink className="w-4 h-4" />
+                            Change in template settings
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-muted-foreground">Pretty-printed JSON output for all extracted data</p>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleCopyJson(JSON.stringify(mockRun.extractedData, null, 2))}><Copy className="w-4 h-4 mr-1" />Copy</Button>
+                        <Button variant="outline" size="sm" onClick={handleDownloadJson}><Download className="w-4 h-4 mr-1" />Download</Button>
+                      </div>
+                    </div>
+                    <pre className="bg-muted rounded-lg p-4 text-sm overflow-auto max-h-[400px] font-mono">{JSON.stringify(mockRun.extractedData, null, 2)}</pre>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
