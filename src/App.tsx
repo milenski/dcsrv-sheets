@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { AppLayout } from "@/components/app/AppLayout";
 import { AuthProvider } from "@/hooks/useAuth";
+import { UsageProvider } from "@/hooks/useUsage";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import Home from "./pages/Home";
 import Pricing from "./pages/Pricing";
@@ -43,6 +44,7 @@ const App = () => (
       <SpeedInsights />
       <BrowserRouter>
         <AuthProvider>
+          <UsageProvider>
           <Routes>
             {/* Marketing site */}
             <Route element={<Layout><Home /></Layout>} path="/" />
@@ -77,6 +79,7 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </UsageProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
