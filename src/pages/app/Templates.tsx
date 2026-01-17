@@ -8,7 +8,8 @@ import {
   Play,
   Pencil,
   Trash2,
-  Clock
+  Clock,
+  Code2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,8 +32,10 @@ import {
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/app/PageHeader";
 import { EmptyState } from "@/components/app/EmptyState";
+import { useApiAccess } from "@/hooks/useApiAccess";
+import { cn } from "@/lib/utils";
 
-// Mock data
+// Mock data - add apiAccess field to templates
 const templates = [
   { 
     id: "1", 
@@ -42,7 +45,8 @@ const templates = [
     columns: 8, 
     lastRun: "2 hours ago",
     updatedAt: "Jan 10, 2026",
-    runsCount: 24
+    runsCount: 24,
+    apiAccess: "inherit" as const, // inherit | enabled | disabled
   },
   { 
     id: "2", 
@@ -52,7 +56,8 @@ const templates = [
     columns: 5, 
     lastRun: "Yesterday",
     updatedAt: "Jan 8, 2026",
-    runsCount: 18
+    runsCount: 18,
+    apiAccess: "enabled" as const,
   },
   { 
     id: "3", 
@@ -62,14 +67,37 @@ const templates = [
     columns: 12, 
     lastRun: "3 days ago",
     updatedAt: "Jan 5, 2026",
-    runsCount: 5
+    runsCount: 5,
+    apiAccess: "disabled" as const,
   },
 ];
+
+type ApiAccessLevel = "inherit" | "enabled" | "disabled";
+
+function getApiStatusBadge(templateApiAccess: ApiAccessLevel, accountApiEnabled: boolean) {
+  if (!accountApiEnabled) {
+    return { label: "API: Off", variant: "secondary" as const, tooltip: "Account API is disabled" };
+  }
+  
+  switch (templateApiAccess) {
+    case "enabled":
+      return { label: "API: Enabled", variant: "default" as const };
+    case "disabled":
+      return { label: "API: Disabled", variant: "secondary" as const };
+    case "inherit":
+    default:
+      return { 
+        label: accountApiEnabled ? "API: On (inherited)" : "API: Off (inherited)", 
+        variant: accountApiEnabled ? "outline" as const : "secondary" as const 
+      };
+  }
+}
 
 export default function Templates() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"grid" | "table">("grid");
+  const { apiEnabled } = useApiAccess();
 
   const filteredTemplates = templates.filter(t => 
     t.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -175,13 +203,29 @@ export default function Templates() {
                   {template.description}
                 </p>
 
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center flex-wrap gap-2 mb-4">
                   <Badge variant="secondary" className="text-xs">
                     {template.sheets} sheets
                   </Badge>
                   <Badge variant="secondary" className="text-xs">
                     {template.columns} columns
                   </Badge>
+                  {(() => {
+                    const apiStatus = getApiStatusBadge(template.apiAccess, apiEnabled);
+                    return (
+                      <Badge 
+                        variant={apiStatus.variant} 
+                        className={cn(
+                          "text-xs gap-1",
+                          !apiEnabled && "cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                        )}
+                        onClick={!apiEnabled ? () => navigate("/app/developers") : undefined}
+                      >
+                        <Code2 className="w-3 h-3" />
+                        {apiStatus.label}
+                      </Badge>
+                    );
+                  })()}
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t">
@@ -201,6 +245,7 @@ export default function Templates() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
+                <TableHead>API</TableHead>
                 <TableHead>Sheets</TableHead>
                 <TableHead>Columns</TableHead>
                 <TableHead>Last Run</TableHead>
@@ -219,6 +264,17 @@ export default function Templates() {
                       {template.name}
                     </Link>
                     <p className="text-xs text-muted-foreground mt-0.5">{template.description}</p>
+                  </TableCell>
+                  <TableCell>
+                    {(() => {
+                      const apiStatus = getApiStatusBadge(template.apiAccess, apiEnabled);
+                      return (
+                        <Badge variant={apiStatus.variant} className="text-xs gap-1">
+                          <Code2 className="w-3 h-3" />
+                          {apiStatus.label.replace("API: ", "")}
+                        </Badge>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>{template.sheets}</TableCell>
                   <TableCell>{template.columns}</TableCell>

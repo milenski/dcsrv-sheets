@@ -8,7 +8,9 @@ import {
   ArrowRight,
   CheckCircle2,
   AlertCircle,
-  Loader2
+  Loader2,
+  Code2,
+  Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +19,7 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { StatCard } from "@/components/app/StatCard";
 import { UsageMeter } from "@/components/app/UsageMeter";
 import { EmptyState } from "@/components/app/EmptyState";
+import { useApiAccess } from "@/hooks/useApiAccess";
 
 // Mock data
 const recentTemplates = [
@@ -45,6 +48,7 @@ const statusColors = {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { apiEnabled } = useApiAccess();
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -93,6 +97,47 @@ export default function Dashboard() {
           description="Per document"
         />
       </div>
+
+      {/* API Access Notice */}
+      {!apiEnabled ? (
+        <Card className="shadow-card mb-8 border-amber-500/30 bg-amber-500/5">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <p className="font-medium">API access is not enabled</p>
+                  <p className="text-sm text-muted-foreground">
+                    Enable API keys and webhooks to fetch results as JSON and receive callbacks when jobs complete.
+                  </p>
+                </div>
+              </div>
+              <Button onClick={() => navigate("/app/developers")}>
+                Enable API
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="shadow-card mb-8">
+          <CardContent className="py-3">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Code2 className="w-5 h-5 text-primary" />
+                <span className="text-sm">
+                  <Badge variant="secondary" className="mr-2">API enabled</Badge>
+                  Programmatic access is active for your account
+                </span>
+              </div>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/app/developers">Manage API</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Usage Meter */}
       <Card className="shadow-card mb-8">

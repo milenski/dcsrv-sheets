@@ -11,7 +11,9 @@ import {
   Check,
   X,
   ChevronRight,
-  MessageSquare
+  MessageSquare,
+  Code2,
+  ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +41,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useApiAccess } from "@/hooks/useApiAccess";
 
 // Mock template data
 const mockTemplate = {
@@ -48,6 +58,7 @@ const mockTemplate = {
   description: "Extract invoice data including amounts, dates, and vendor info",
   outputMode: "new" as const,
   storeData: true,
+  apiAccess: "inherit" as "inherit" | "enabled" | "disabled",
   prompt: "You are extracting invoice data. Be precise with numbers and dates. Always verify totals match line items.",
   sheets: [
     { 
@@ -87,13 +98,22 @@ const mockTemplate = {
 export default function TemplateDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { apiEnabled } = useApiAccess();
   const [template, setTemplate] = useState(mockTemplate);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(template.name);
   const [templatePrompt, setTemplatePrompt] = useState(template.prompt);
+  const [templateApiAccess, setTemplateApiAccess] = useState<"inherit" | "enabled" | "disabled">(template.apiAccess);
 
   const enabledSheets = template.sheets.filter(s => s.enabled);
   const totalColumns = template.sheets.flatMap(s => s.columns).filter(c => c.enabled).length;
+
+  const getEffectiveApiStatus = () => {
+    if (!apiEnabled) return { enabled: false, label: "Off (account disabled)" };
+    if (templateApiAccess === "enabled") return { enabled: true, label: "Enabled" };
+    if (templateApiAccess === "disabled") return { enabled: false, label: "Disabled" };
+    return { enabled: apiEnabled, label: apiEnabled ? "On (inherited)" : "Off (inherited)" };
+  };
 
   const handleSaveName = () => {
     setTemplate(prev => ({ ...prev, name: editedName }));
@@ -497,6 +517,74 @@ export default function TemplateDetail() {
                 </div>
 
                 <Button>Save Changes</Button>
+              </CardContent>
+            </Card>
+
+            {/* Integrations (API) Section */}
+            <Card className="shadow-card">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Code2 className="w-5 h-5 text-primary" />
+                  <CardTitle className="text-base">Integrations (API)</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <Label className="font-medium">API access for this template</Label>
+                  
+                  {!apiEnabled ? (
+                    <div className="bg-muted/50 rounded-lg p-4">
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Account-level API access is disabled. Enable it first to configure template-level API settings.
+                      </p>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to="/app/developers" className="gap-2">
+                          <ExternalLink className="w-4 h-4" />
+                          Enable in Developers
+                        </Link>
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <Select 
+                        value={templateApiAccess} 
+                        onValueChange={(value: "inherit" | "enabled" | "disabled") => setTemplateApiAccess(value)}
+                      >
+                        <SelectTrigger className="w-full max-w-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="inherit">
+                            Inherit from account (currently {apiEnabled ? "On" : "Off"})
+                          </SelectItem>
+                          <SelectItem value="enabled">Enabled</SelectItem>
+                          <SelectItem value="disabled">Disabled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-muted-foreground">Effective status:</span>
+                        <Badge variant={getEffectiveApiStatus().enabled ? "default" : "secondary"}>
+                          {getEffectiveApiStatus().label}
+                        </Badge>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="pt-4 border-t">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Note:</strong> Webhook notifications are configured at account level. 
+                    Webhook payloads include <code className="bg-muted px-1 py-0.5 rounded text-xs">templateId</code> so 
+                    you can route internally.
+                  </p>
+                  <Button variant="link" size="sm" asChild className="px-0 mt-2">
+                    <Link to="/app/developers">
+                      <ExternalLink className="w-3 h-3 mr-1" />
+                      Configure webhooks
+                    </Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
