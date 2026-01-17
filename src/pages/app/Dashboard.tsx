@@ -17,9 +17,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/app/PageHeader";
 import { StatCard } from "@/components/app/StatCard";
-import { UsageMeter } from "@/components/app/UsageMeter";
+import { TokenUsageMeter } from "@/components/app/TokenUsageMeter";
+import { UsageBlockedBanner } from "@/components/app/UsageBlockedBanner";
+import { OverageWarning } from "@/components/app/OverageWarning";
+import { OnboardingDashboard } from "@/components/app/OnboardingDashboard";
 import { EmptyState } from "@/components/app/EmptyState";
 import { useApiAccess } from "@/hooks/useApiAccess";
+import { useUsage } from "@/hooks/useUsage";
 
 // Mock data
 const recentTemplates = [
@@ -49,6 +53,12 @@ const statusColors = {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { apiEnabled } = useApiAccess();
+  const usage = useUsage();
+
+  // Show onboarding dashboard for new users
+  if (usage.isNewUser) {
+    return <OnboardingDashboard />;
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -57,7 +67,11 @@ export default function Dashboard() {
         description="Welcome back! Here's what's happening with your extractions."
         actions={
           <>
-            <Button variant="outline" onClick={() => navigate("/app/run")}>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/app/run")}
+              disabled={usage.isBlocked}
+            >
               <Play className="w-4 h-4 mr-2" />
               Run Extraction
             </Button>
@@ -69,24 +83,46 @@ export default function Dashboard() {
         }
       />
 
+      {/* Usage Blocked Banner (Free plan at limit) */}
+      {usage.isBlocked && (
+        <UsageBlockedBanner
+          usedTokens={usage.usedTokens}
+          includedTokens={usage.includedTokens}
+          resetDate={usage.resetDate}
+          className="mb-6"
+        />
+      )}
+
+      {/* Overage Warning (Paid plans over limit) */}
+      {!usage.isBlocked && usage.overageTokens > 0 && usage.plan.overagePrice && (
+        <OverageWarning
+          usedTokens={usage.usedTokens}
+          includedTokens={usage.includedTokens}
+          overageTokens={usage.overageTokens}
+          overageCost={usage.overageCost}
+          overagePrice={usage.plan.overagePrice}
+          className="mb-6"
+        />
+      )}
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
           title="Templates"
-          value={3}
+          value={usage.templateCount}
           icon={FileSpreadsheet}
           description="Active templates"
         />
         <StatCard
           title="Extractions"
-          value={47}
+          value={usage.runCount}
           icon={Play}
           description="This month"
           trend={{ value: 12, label: "vs last month" }}
         />
         <StatCard
-          title="Pages Processed"
-          value="1,234"
+          title="Tokens Used"
+          value={Math.round(usage.usedTokens / 1000) + "k"}
           icon={FileText}
           description="This month"
         />
@@ -144,13 +180,22 @@ export default function Dashboard() {
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Monthly Usage</CardTitle>
-            <Button variant="link" size="sm" asChild className="text-primary">
-              <Link to="/app/billing">Upgrade plan</Link>
-            </Button>
+            <Badge variant="outline">{usage.plan.name} Plan</Badge>
           </div>
         </CardHeader>
         <CardContent>
-          <UsageMeter used={1234} limit={2000} label="Pages" />
+          <TokenUsageMeter
+            usedTokens={usage.usedTokens}
+            includedTokens={usage.includedTokens}
+            remainingTokens={usage.remainingTokens}
+            overageTokens={usage.overageTokens}
+            overageCost={usage.overageCost}
+            usagePercentage={usage.usagePercentage}
+            usageStatus={usage.usageStatus}
+            planName={usage.plan.name}
+            isHardLimit={usage.plan.isHardLimit}
+            resetDate={usage.resetDate}
+          />
         </CardContent>
       </Card>
 
@@ -169,7 +214,7 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            {recentTemplates.length > 0 ? (
+            {usage.hasTemplates ? (
               <div className="space-y-3">
                 {recentTemplates.map((template) => (
                   <Link
@@ -196,9 +241,9 @@ export default function Dashboard() {
               <EmptyState
                 icon={FileSpreadsheet}
                 title="No templates yet"
-                description="Create your first template to start extracting data."
+                description="Templates define how your documents are converted into structured data."
                 action={{
-                  label: "Create Template",
+                  label: "Create your first template",
                   onClick: () => navigate("/app/templates/new"),
                 }}
               />
@@ -219,7 +264,7 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            {recentRuns.length > 0 ? (
+            {usage.hasRuns ? (
               <div className="space-y-3">
                 {recentRuns.map((run) => {
                   const StatusIcon = statusIcons[run.status as keyof typeof statusIcons];
@@ -254,11 +299,14 @@ export default function Dashboard() {
             ) : (
               <EmptyState
                 icon={Play}
-                title="No runs yet"
-                description="Run your first extraction to see results here."
-                action={{
-                  label: "Run Extraction",
+                title="No extractions yet"
+                description="When you process documents, your results will appear here."
+                action={usage.hasTemplates ? {
+                  label: "Run extraction",
                   onClick: () => navigate("/app/run"),
+                } : {
+                  label: "Create a template",
+                  onClick: () => navigate("/app/templates/new"),
                 }}
               />
             )}
