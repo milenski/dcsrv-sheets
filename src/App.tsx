@@ -31,6 +31,7 @@ import History from "./pages/app/History";
 import Billing from "./pages/app/Billing";
 import Settings from "./pages/app/Settings";
 import Developers from "./pages/app/Developers";
+import DevelopersDocs from "./pages/app/DevelopersDocs";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,7 @@ const App = () => (
               <Route path="billing" element={<Billing />} />
               <Route path="settings" element={<Settings />} />
               <Route path="developers" element={<Developers />} />
+              <Route path="developers/docs" element={<DevelopersDocs />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
