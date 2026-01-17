@@ -9,7 +9,8 @@ import {
   Pencil,
   Trash2,
   Clock,
-  Code2
+  Code2,
+  Lightbulb
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,10 +34,11 @@ import {
 import { PageHeader } from "@/components/app/PageHeader";
 import { EmptyState } from "@/components/app/EmptyState";
 import { useApiAccess } from "@/hooks/useApiAccess";
+import { useUsage } from "@/hooks/useUsage";
 import { cn } from "@/lib/utils";
 
 // Mock data - add apiAccess field to templates
-const templates = [
+const mockTemplates = [
   { 
     id: "1", 
     name: "Invoice Extractor", 
@@ -46,7 +48,7 @@ const templates = [
     lastRun: "2 hours ago",
     updatedAt: "Jan 10, 2026",
     runsCount: 24,
-    apiAccess: "inherit" as const, // inherit | enabled | disabled
+    apiAccess: "inherit" as const,
   },
   { 
     id: "2", 
@@ -70,6 +72,13 @@ const templates = [
     runsCount: 5,
     apiAccess: "disabled" as const,
   },
+];
+
+// Example templates for empty state
+const exampleTemplates = [
+  { name: "Invoice Extractor", description: "Amounts, dates, vendor info" },
+  { name: "Receipt Parser", description: "Line items, totals, tax" },
+  { name: "Contract Summary", description: "Parties, terms, dates" },
 ];
 
 type ApiAccessLevel = "inherit" | "enabled" | "disabled";
@@ -98,6 +107,10 @@ export default function Templates() {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"grid" | "table">("grid");
   const { apiEnabled } = useApiAccess();
+  const usage = useUsage();
+
+  // Use empty array if no templates
+  const templates = usage.hasTemplates ? mockTemplates : [];
 
   const filteredTemplates = templates.filter(t => 
     t.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -117,198 +130,232 @@ export default function Templates() {
         }
       />
 
-      {/* Filters */}
-      <div className="flex items-center gap-4 mb-6">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search templates..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
+      {!usage.hasTemplates ? (
+        <div className="max-w-2xl mx-auto">
+          <EmptyState
+            icon={FileSpreadsheet}
+            title="No templates yet"
+            description="Templates define how your documents are converted into structured data. Create columns and sheets to match your extraction needs."
+            action={{
+              label: "Create your first template",
+              onClick: () => navigate("/app/templates/new"),
+            }}
           />
-        </div>
-        <div className="flex items-center border rounded-lg p-0.5">
-          <Button
-            variant={view === "grid" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setView("grid")}
-            className="h-8"
-          >
-            Grid
-          </Button>
-          <Button
-            variant={view === "table" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setView("table")}
-            className="h-8"
-          >
-            Table
-          </Button>
-        </div>
-      </div>
-
-      {filteredTemplates.length === 0 ? (
-        <EmptyState
-          icon={FileSpreadsheet}
-          title={search ? "No templates found" : "No templates yet"}
-          description={search 
-            ? "Try adjusting your search terms." 
-            : "Create your first template to start extracting data from documents."
-          }
-          action={!search ? {
-            label: "Create Template",
-            onClick: () => navigate("/app/templates/new"),
-          } : undefined}
-        />
-      ) : view === "grid" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredTemplates.map((template) => (
-            <Card key={template.id} className="shadow-card hover:shadow-elevated transition-shadow">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
-                    <FileSpreadsheet className="w-5 h-5 text-accent-foreground" />
+          
+          {/* Example templates */}
+          <div className="mt-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Lightbulb className="w-4 h-4 text-amber-500" />
+              <p className="text-sm text-muted-foreground">
+                Need inspiration? Here are some common template types:
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {exampleTemplates.map((template) => (
+                <div 
+                  key={template.name}
+                  className="p-4 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => navigate("/app/templates/new")}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center mb-2">
+                    <FileSpreadsheet className="w-4 h-4 text-accent-foreground" />
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => navigate(`/app/templates/${template.id}/run`)}>
-                        <Play className="w-4 h-4 mr-2" />
-                        Run Extraction
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate(`/app/templates/${template.id}`)}>
-                        <Pencil className="w-4 h-4 mr-2" />
-                        Edit Template
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive focus:text-destructive">
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <p className="font-medium text-sm">{template.name}</p>
+                  <p className="text-xs text-muted-foreground">{template.description}</p>
                 </div>
-
-                <Link to={`/app/templates/${template.id}`}>
-                  <h3 className="font-semibold text-foreground mb-1 hover:text-primary transition-colors">
-                    {template.name}
-                  </h3>
-                </Link>
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                  {template.description}
-                </p>
-
-                <div className="flex items-center flex-wrap gap-2 mb-4">
-                  <Badge variant="secondary" className="text-xs">
-                    {template.sheets} sheets
-                  </Badge>
-                  <Badge variant="secondary" className="text-xs">
-                    {template.columns} columns
-                  </Badge>
-                  {(() => {
-                    const apiStatus = getApiStatusBadge(template.apiAccess, apiEnabled);
-                    return (
-                      <Badge 
-                        variant={apiStatus.variant} 
-                        className={cn(
-                          "text-xs gap-1",
-                          !apiEnabled && "cursor-pointer hover:bg-primary hover:text-primary-foreground"
-                        )}
-                        onClick={!apiEnabled ? () => navigate("/app/developers") : undefined}
-                      >
-                        <Code2 className="w-3 h-3" />
-                        {apiStatus.label}
-                      </Badge>
-                    );
-                  })()}
-                </div>
-
-                <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    Last run {template.lastRun}
-                  </span>
-                  <span>{template.runsCount} runs</span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+              ))}
+            </div>
+          </div>
         </div>
       ) : (
-        <Card className="shadow-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>API</TableHead>
-                <TableHead>Sheets</TableHead>
-                <TableHead>Columns</TableHead>
-                <TableHead>Last Run</TableHead>
-                <TableHead>Updated</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+        <>
+          {/* Filters */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search templates..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex items-center border rounded-lg p-0.5">
+              <Button
+                variant={view === "grid" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setView("grid")}
+                className="h-8"
+              >
+                Grid
+              </Button>
+              <Button
+                variant={view === "table" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setView("table")}
+                className="h-8"
+              >
+                Table
+              </Button>
+            </div>
+          </div>
+
+          {filteredTemplates.length === 0 ? (
+            <EmptyState
+              icon={FileSpreadsheet}
+              title="No templates found"
+              description="Try adjusting your search terms."
+            />
+          ) : view === "grid" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredTemplates.map((template) => (
-                <TableRow key={template.id}>
-                  <TableCell>
-                    <Link 
-                      to={`/app/templates/${template.id}`}
-                      className="font-medium hover:text-primary transition-colors"
-                    >
-                      {template.name}
+                <Card key={template.id} className="shadow-card hover:shadow-elevated transition-shadow">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
+                        <FileSpreadsheet className="w-5 h-5 text-accent-foreground" />
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigate(`/app/templates/${template.id}/run`)}>
+                            <Play className="w-4 h-4 mr-2" />
+                            Run Extraction
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate(`/app/templates/${template.id}`)}>
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Edit Template
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive focus:text-destructive">
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    <Link to={`/app/templates/${template.id}`}>
+                      <h3 className="font-semibold text-foreground mb-1 hover:text-primary transition-colors">
+                        {template.name}
+                      </h3>
                     </Link>
-                    <p className="text-xs text-muted-foreground mt-0.5">{template.description}</p>
-                  </TableCell>
-                  <TableCell>
-                    {(() => {
-                      const apiStatus = getApiStatusBadge(template.apiAccess, apiEnabled);
-                      return (
-                        <Badge variant={apiStatus.variant} className="text-xs gap-1">
-                          <Code2 className="w-3 h-3" />
-                          {apiStatus.label.replace("API: ", "")}
-                        </Badge>
-                      );
-                    })()}
-                  </TableCell>
-                  <TableCell>{template.sheets}</TableCell>
-                  <TableCell>{template.columns}</TableCell>
-                  <TableCell>{template.lastRun}</TableCell>
-                  <TableCell>{template.updatedAt}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => navigate(`/app/templates/${template.id}/run`)}>
-                          <Play className="w-4 h-4 mr-2" />
-                          Run Extraction
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate(`/app/templates/${template.id}`)}>
-                          <Pencil className="w-4 h-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive focus:text-destructive">
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                      {template.description}
+                    </p>
+
+                    <div className="flex items-center flex-wrap gap-2 mb-4">
+                      <Badge variant="secondary" className="text-xs">
+                        {template.sheets} sheets
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        {template.columns} columns
+                      </Badge>
+                      {(() => {
+                        const apiStatus = getApiStatusBadge(template.apiAccess, apiEnabled);
+                        return (
+                          <Badge 
+                            variant={apiStatus.variant} 
+                            className={cn(
+                              "text-xs gap-1",
+                              !apiEnabled && "cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                            )}
+                            onClick={!apiEnabled ? () => navigate("/app/developers") : undefined}
+                          >
+                            <Code2 className="w-3 h-3" />
+                            {apiStatus.label}
+                          </Badge>
+                        );
+                      })()}
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        Last run {template.lastRun}
+                      </span>
+                      <span>{template.runsCount} runs</span>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
-            </TableBody>
-          </Table>
-        </Card>
+            </div>
+          ) : (
+            <Card className="shadow-card">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>API</TableHead>
+                    <TableHead>Sheets</TableHead>
+                    <TableHead>Columns</TableHead>
+                    <TableHead>Last Run</TableHead>
+                    <TableHead>Updated</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredTemplates.map((template) => (
+                    <TableRow key={template.id}>
+                      <TableCell>
+                        <Link 
+                          to={`/app/templates/${template.id}`}
+                          className="font-medium hover:text-primary transition-colors"
+                        >
+                          {template.name}
+                        </Link>
+                        <p className="text-xs text-muted-foreground mt-0.5">{template.description}</p>
+                      </TableCell>
+                      <TableCell>
+                        {(() => {
+                          const apiStatus = getApiStatusBadge(template.apiAccess, apiEnabled);
+                          return (
+                            <Badge variant={apiStatus.variant} className="text-xs gap-1">
+                              <Code2 className="w-3 h-3" />
+                              {apiStatus.label.replace("API: ", "")}
+                            </Badge>
+                          );
+                        })()}
+                      </TableCell>
+                      <TableCell>{template.sheets}</TableCell>
+                      <TableCell>{template.columns}</TableCell>
+                      <TableCell>{template.lastRun}</TableCell>
+                      <TableCell>{template.updatedAt}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => navigate(`/app/templates/${template.id}/run`)}>
+                              <Play className="w-4 h-4 mr-2" />
+                              Run Extraction
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => navigate(`/app/templates/${template.id}`)}>
+                              <Pencil className="w-4 h-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive focus:text-destructive">
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          )}
+        </>
       )}
     </div>
   );

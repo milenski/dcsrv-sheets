@@ -8,7 +8,8 @@ import {
   Play,
   Loader2,
   CheckCircle2,
-  FileSpreadsheet
+  FileSpreadsheet,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { UsageBlockedBanner, UsageBlockedModal } from "@/components/app/UsageBlockedBanner";
+import { OverageNotice } from "@/components/app/OverageWarning";
+import { useUsage } from "@/hooks/useUsage";
 import { cn } from "@/lib/utils";
 
 // Mock templates
@@ -41,15 +45,25 @@ interface UploadedFile {
 export default function RunExtraction() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const usage = useUsage();
   const [selectedTemplate, setSelectedTemplate] = useState(id || "");
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [overrideOutputMode, setOverrideOutputMode] = useState(false);
   const [overrideStoreData, setOverrideStoreData] = useState(false);
+  const [showBlockedModal, setShowBlockedModal] = useState(false);
 
   const selectedTemplateData = mockTemplates.find(t => t.id === selectedTemplate);
 
+  // Check if user is approaching limit (for paid plans)
+  const isApproachingLimit = !usage.plan.isHardLimit && usage.usagePercentage >= 95;
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (usage.isBlocked) {
+      setShowBlockedModal(true);
+      return;
+    }
+    
     const newFiles = Array.from(e.target.files || []).map(file => ({
       id: Math.random().toString(36).substr(2, 9),
       file,
@@ -65,6 +79,12 @@ export default function RunExtraction() {
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    
+    if (usage.isBlocked) {
+      setShowBlockedModal(true);
+      return;
+    }
+    
     const newFiles = Array.from(e.dataTransfer.files).map(file => ({
       id: Math.random().toString(36).substr(2, 9),
       file,
@@ -75,6 +95,11 @@ export default function RunExtraction() {
   };
 
   const simulateProcessing = async () => {
+    if (usage.isBlocked) {
+      setShowBlockedModal(true);
+      return;
+    }
+    
     setIsRunning(true);
     
     for (let i = 0; i < files.length; i++) {
@@ -105,7 +130,7 @@ export default function RunExtraction() {
   };
 
   const allFilesCompleted = files.length > 0 && files.every(f => f.status === "completed");
-  const canStartProcessing = selectedTemplate && files.length > 0 && !isRunning;
+  const canStartProcessing = selectedTemplate && files.length > 0 && !isRunning && !usage.isBlocked;
 
   return (
     <div className="min-h-full bg-muted/30">
@@ -131,6 +156,20 @@ export default function RunExtraction() {
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
+        {/* Usage Blocked Banner (Free plan at limit) */}
+        {usage.isBlocked && (
+          <UsageBlockedBanner
+            usedTokens={usage.usedTokens}
+            includedTokens={usage.includedTokens}
+            resetDate={usage.resetDate}
+          />
+        )}
+
+        {/* Overage Notice (Paid plans near/over limit) */}
+        {!usage.isBlocked && isApproachingLimit && usage.plan.overagePrice && (
+          <OverageNotice overagePrice={usage.plan.overagePrice} />
+        )}
+
         {/* Template Selection */}
         <Card className="shadow-card">
           <CardHeader>
@@ -175,20 +214,35 @@ export default function RunExtraction() {
             {/* Drop zone */}
             <label 
               className={cn(
-                "flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer transition-colors",
-                isRunning ? "opacity-50 cursor-not-allowed" : "hover:bg-muted/50"
+                "flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg transition-colors",
+                usage.isBlocked 
+                  ? "opacity-50 cursor-not-allowed border-destructive/50" 
+                  : isRunning 
+                    ? "opacity-50 cursor-not-allowed" 
+                    : "cursor-pointer hover:bg-muted/50"
               )}
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
             >
               <div className="flex flex-col items-center justify-center py-6">
-                <Upload className="w-8 h-8 mb-3 text-muted-foreground" />
-                <p className="mb-1 text-sm text-foreground">
-                  <span className="font-semibold">Click to upload</span> or drag and drop
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  PDF, Word, Images (PNG, JPG)
-                </p>
+                {usage.isBlocked ? (
+                  <>
+                    <AlertTriangle className="w-8 h-8 mb-3 text-destructive" />
+                    <p className="text-sm text-destructive font-medium">
+                      Uploads disabled — usage limit reached
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-8 h-8 mb-3 text-muted-foreground" />
+                    <p className="mb-1 text-sm text-foreground">
+                      <span className="font-semibold">Click to upload</span> or drag and drop
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      PDF, Word, Images (PNG, JPG)
+                    </p>
+                  </>
+                )}
               </div>
               <input 
                 type="file" 
@@ -196,7 +250,7 @@ export default function RunExtraction() {
                 accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
                 multiple
                 onChange={handleFileUpload}
-                disabled={isRunning}
+                disabled={isRunning || usage.isBlocked}
               />
             </label>
 
@@ -306,6 +360,11 @@ export default function RunExtraction() {
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Processing...
                 </>
+              ) : usage.isBlocked ? (
+                <>
+                  <AlertTriangle className="w-4 h-4 mr-2" />
+                  Limit Reached
+                </>
               ) : (
                 <>
                   <Play className="w-4 h-4 mr-2" />
@@ -316,6 +375,15 @@ export default function RunExtraction() {
           )}
         </div>
       </div>
+
+      {/* Blocked Modal */}
+      <UsageBlockedModal
+        open={showBlockedModal}
+        onOpenChange={setShowBlockedModal}
+        usedTokens={usage.usedTokens}
+        includedTokens={usage.includedTokens}
+        resetDate={usage.resetDate}
+      />
     </div>
   );
 }
