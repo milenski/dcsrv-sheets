@@ -15,9 +15,9 @@ const fadeIn = {
 };
 
 const benefits = [
-  "50 free pages every month",
+  "50,000 tokens free every month",
   "No credit card required",
-  "Export to Excel & CSV",
+  "Export to JSON & Excel",
   "Cancel anytime",
 ];
 
