@@ -4,6 +4,7 @@ import { AppHeader } from "./AppHeader";
 import { SharedFooter } from "@/components/shared/SharedFooter";
 import { useAuth } from "@/hooks/useAuth";
 import { ApiAccessProvider } from "@/hooks/useApiAccess";
+import { DevTools } from "./DevTools";
 
 export function AppLayout() {
   const { isAuthenticated } = useAuth();
@@ -24,6 +25,7 @@ export function AppLayout() {
           </main>
           <SharedFooter compact />
         </div>
+        <DevTools />
       </div>
     </ApiAccessProvider>
   );
