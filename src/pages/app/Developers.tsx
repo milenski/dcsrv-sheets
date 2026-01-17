@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { 
   Key, 
   Webhook, 
@@ -198,10 +199,10 @@ export default function Developers() {
                 </code>
               </div>
               <Button variant="outline" size="sm" asChild>
-                <a href="/help" className="gap-2">
+                <Link to="/app/developers/docs" className="gap-2">
                   <ExternalLink className="w-4 h-4" />
                   View API Documentation
-                </a>
+                </Link>
               </Button>
             </CardContent>
           )}
