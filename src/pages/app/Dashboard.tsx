@@ -55,6 +55,8 @@ export default function Dashboard() {
   const { apiEnabled } = useApiAccess();
   const usage = useUsage();
 
+  const isFreeOrLight = usage.plan.id === "free" || usage.plan.id === "light";
+
   // Show onboarding dashboard for new users
   if (usage.isNewUser) {
     return <OnboardingDashboard />;
@@ -134,7 +136,7 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* API Access Notice */}
+      {/* API Access Notice (plan-aware) */}
       {!apiEnabled ? (
         <Card className="shadow-card mb-8 border-amber-500/30 bg-amber-500/5">
           <CardContent className="py-4">
@@ -144,15 +146,15 @@ export default function Dashboard() {
                   <Zap className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="font-medium">API access is not enabled</p>
+                  <p className="font-medium">{isFreeOrLight ? "Try our API" : "Enable API access"}</p>
                   <p className="text-sm text-muted-foreground">
-                    Enable API keys and webhooks to fetch results as JSON and receive callbacks when jobs complete.
+                    {isFreeOrLight
+                      ? "Integrate DocServant with your system using our API. Available on your plan (limited)."
+                      : "Use webhooks and real-time integrations."}
                   </p>
                 </div>
               </div>
-              <Button onClick={() => navigate("/app/developers")}>
-                Enable API
-              </Button>
+              <Button onClick={() => navigate("/app/developers")}>Enable API</Button>
             </div>
           </CardContent>
         </Card>
@@ -163,13 +165,23 @@ export default function Dashboard() {
               <div className="flex items-center gap-3">
                 <Code2 className="w-5 h-5 text-primary" />
                 <span className="text-sm">
-                  <Badge variant="secondary" className="mr-2">API enabled</Badge>
-                  Programmatic access is active for your account
+                  <Badge variant="secondary" className="mr-2">
+                    {isFreeOrLight ? "API enabled (Free tier)" : "API enabled"}
+                  </Badge>
+                  {isFreeOrLight
+                    ? "Upgrade to unlock webhooks and higher limits."
+                    : "Programmatic access is active for your account"}
                 </span>
               </div>
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/app/developers">Manage API</Link>
-              </Button>
+              {isFreeOrLight ? (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/app/billing">Upgrade</Link>
+                </Button>
+              ) : (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/app/developers">Manage API</Link>
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -31,6 +31,7 @@ import RunResults from "./pages/app/RunResults";
 import History from "./pages/app/History";
 import Billing from "./pages/app/Billing";
 import Settings from "./pages/app/Settings";
+import Team from "./pages/app/Team";
 import Developers from "./pages/app/Developers";
 import DevelopersDocs from "./pages/app/DevelopersDocs";
 
@@ -73,6 +74,7 @@ const App = () => (
               <Route path="history" element={<History />} />
               <Route path="billing" element={<Billing />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="settings/team" element={<Team />} />
               <Route path="developers" element={<Developers />} />
               <Route path="developers/docs" element={<DevelopersDocs />} />
             </Route>

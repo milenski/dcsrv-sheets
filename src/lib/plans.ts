@@ -6,6 +6,12 @@ export interface Plan {
   tokens: number; // monthly included tokens
   overagePrice: number | null; // EUR per 50,000 additional tokens (null = no overage allowed)
   isHardLimit: boolean; // if true, usage blocked at limit
+  capabilities?: {
+    api: boolean;
+    json: boolean;
+    webhooks: boolean;
+    team: boolean;
+  };
   features: string[];
 }
 
@@ -17,6 +23,12 @@ export const PLANS: Record<string, Plan> = {
     tokens: 50_000,
     overagePrice: null,
     isHardLimit: true,
+    capabilities: {
+      api: true,
+      json: true,
+      webhooks: false,
+      team: false,
+    },
     features: [
       "50,000 tokens/month",
       "Basic extraction",
@@ -32,6 +44,12 @@ export const PLANS: Record<string, Plan> = {
     tokens: 200_000,
     overagePrice: 5.0,
     isHardLimit: false,
+    capabilities: {
+      api: true,
+      json: true,
+      webhooks: false,
+      team: false,
+    },
     features: [
       "200,000 tokens/month",
       "€5.00 per additional 50k tokens",
@@ -47,6 +65,12 @@ export const PLANS: Record<string, Plan> = {
     tokens: 500_000,
     overagePrice: 4.0,
     isHardLimit: false,
+    capabilities: {
+      api: true,
+      json: true,
+      webhooks: true,
+      team: true,
+    },
     features: [
       "500,000 tokens/month",
       "€4.00 per additional 50k tokens",
@@ -63,6 +87,12 @@ export const PLANS: Record<string, Plan> = {
     tokens: 1_200_000,
     overagePrice: 3.0,
     isHardLimit: false,
+    capabilities: {
+      api: true,
+      json: true,
+      webhooks: true,
+      team: true,
+    },
     features: [
       "1,200,000 tokens/month",
       "€3.00 per additional 50k tokens",
@@ -74,6 +104,22 @@ export const PLANS: Record<string, Plan> = {
     ],
   },
 };
+
+export function planHasWebhooks(plan: Plan) {
+  return plan.capabilities?.webhooks ?? (plan.id === "standard" || plan.id === "pro");
+}
+
+export function planHasTeam(plan: Plan) {
+  return plan.capabilities?.team ?? (plan.id === "standard" || plan.id === "pro");
+}
+
+export function planHasApi(plan: Plan) {
+  return plan.capabilities?.api ?? true;
+}
+
+export function planHasJson(plan: Plan) {
+  return plan.capabilities?.json ?? true;
+}
 
 export const PLANS_ARRAY = Object.values(PLANS);
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { 
   Key, 
@@ -38,6 +38,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useUsage } from "@/hooks/useUsage";
+import { useApiAccess } from "@/hooks/useApiAccess";
+import { planHasWebhooks } from "@/lib/plans";
 
 // Mock data
 const mockApiKey = {
@@ -59,7 +62,10 @@ const mockWebhook = {
 };
 
 export default function Developers() {
-  const [apiEnabled, setApiEnabled] = useState(true);
+  const usage = useUsage();
+  const { apiEnabled, setApiEnabled } = useApiAccess();
+  const webhooksEnabledForPlan = useMemo(() => planHasWebhooks(usage.plan), [usage.plan]);
+
   const [hasApiKey, setHasApiKey] = useState(true);
   const [newKeyVisible, setNewKeyVisible] = useState(false);
   const [newKeyValue, setNewKeyValue] = useState("");
@@ -168,7 +174,7 @@ export default function Developers() {
                   if (checked) {
                     handleEnableApi();
                   } else {
-                    setApiEnabled(false);
+                      setApiEnabled(false);
                     toast.info("API access disabled");
                   }
                 }} 
@@ -310,7 +316,7 @@ export default function Developers() {
           </Card>
         )}
 
-        {/* Webhooks Section */}
+        {/* Webhooks Section (plan-gated) */}
         {apiEnabled && (
           <Card className="shadow-card">
             <CardHeader>
@@ -319,13 +325,47 @@ export default function Developers() {
                   <Webhook className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg">Webhooks</CardTitle>
-                  <CardDescription>Receive real-time notifications when jobs complete</CardDescription>
+                  <CardTitle className="text-lg">
+                    {webhooksEnabledForPlan ? "Webhooks" : "Webhooks (Standard & Pro)"}
+                  </CardTitle>
+                  <CardDescription>
+                    {webhooksEnabledForPlan
+                      ? "Receive real-time notifications when jobs complete"
+                      : "Receive real-time callbacks when processing completes."}
+                  </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="border rounded-lg p-4 space-y-4">
+              {!webhooksEnabledForPlan ? (
+                <div className="bg-muted/50 rounded-lg p-6">
+                  <div className="flex items-start gap-3">
+                    <Webhook className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Webhooks help you build reliable automation without polling.
+                      </p>
+                      <ul className="text-sm text-muted-foreground space-y-2 mb-4">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                          <span>Reliability</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Zap className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                          <span>Automation</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Clock className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                          <span>No polling</span>
+                        </li>
+                      </ul>
+                      <Button onClick={() => (window.location.href = "/app/billing")}>Upgrade plan</Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                <div className="border rounded-lg p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Label className="font-medium">Webhook Endpoint</Label>
@@ -461,6 +501,7 @@ export default function Developers() {
                   </span>
                 </p>
               </div>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -520,6 +561,7 @@ curl https://api.docservant.com/v1/results/job_xyz789.xlsx \\
                   </pre>
                 </div>
               </div>
+              )}
             </CardContent>
           </Card>
         )}
