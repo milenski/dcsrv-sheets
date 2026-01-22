@@ -31,10 +31,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { PageHeader } from "@/components/app/PageHeader";
 import { EmptyState } from "@/components/app/EmptyState";
 import { useApiAccess } from "@/hooks/useApiAccess";
 import { useUsage } from "@/hooks/useUsage";
+import { useRole, canManageTemplates } from "@/hooks/useRole";
 import { cn } from "@/lib/utils";
 
 // Mock data - add apiAccess field to templates
@@ -108,6 +114,8 @@ export default function Templates() {
   const [view, setView] = useState<"grid" | "table">("grid");
   const { apiEnabled } = useApiAccess();
   const usage = useUsage();
+  const { role } = useRole();
+  const canManage = canManageTemplates(role);
 
   // Use empty array if no templates
   const templates = usage.hasTemplates ? mockTemplates : [];
@@ -123,10 +131,24 @@ export default function Templates() {
         title="Templates"
         description="Manage your extraction templates and their configurations."
         actions={
-          <Button onClick={() => navigate("/app/templates/new")}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Template
-          </Button>
+          canManage ? (
+            <Button onClick={() => navigate("/app/templates/new")}>
+              <Plus className="w-4 h-4 mr-2" />
+              New Template
+            </Button>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button disabled>
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Template
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>Only Owners and Admins can manage templates.</TooltipContent>
+            </Tooltip>
+          )
         }
       />
 
@@ -136,10 +158,10 @@ export default function Templates() {
             icon={FileSpreadsheet}
             title="No templates yet"
             description="Templates define how your documents are converted into structured data. Create columns and sheets to match your extraction needs."
-            action={{
+            action={canManage ? {
               label: "Create your first template",
               onClick: () => navigate("/app/templates/new"),
-            }}
+            } : undefined}
           />
           
           {/* Example templates */}
@@ -226,14 +248,20 @@ export default function Templates() {
                             <Play className="w-4 h-4 mr-2" />
                             Run Extraction
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => navigate(`/app/templates/${template.id}`)}>
+                          <DropdownMenuItem 
+                            onClick={() => navigate(`/app/templates/${template.id}`)}
+                            disabled={!canManage}
+                          >
                             <Pencil className="w-4 h-4 mr-2" />
-                            Edit Template
+                            {canManage ? "Edit Template" : "Edit (Admin only)"}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem 
+                            className="text-destructive focus:text-destructive"
+                            disabled={!canManage}
+                          >
                             <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
+                            {canManage ? "Delete" : "Delete (Admin only)"}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -337,14 +365,20 @@ export default function Templates() {
                               <Play className="w-4 h-4 mr-2" />
                               Run Extraction
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => navigate(`/app/templates/${template.id}`)}>
+                            <DropdownMenuItem 
+                              onClick={() => navigate(`/app/templates/${template.id}`)}
+                              disabled={!canManage}
+                            >
                               <Pencil className="w-4 h-4 mr-2" />
-                              Edit
+                              {canManage ? "Edit" : "Edit (Admin only)"}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive focus:text-destructive">
+                            <DropdownMenuItem 
+                              className="text-destructive focus:text-destructive"
+                              disabled={!canManage}
+                            >
                               <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
+                              {canManage ? "Delete" : "Delete (Admin only)"}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

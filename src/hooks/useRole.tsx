@@ -39,3 +39,7 @@ export function canAccessTeam(role: AppRole) {
 export function canTransferOwnership(role: AppRole) {
   return role === "owner";
 }
+
+export function canManageTemplates(role: AppRole) {
+  return role === "owner" || role === "admin";
+}

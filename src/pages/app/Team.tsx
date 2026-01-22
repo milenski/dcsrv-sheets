@@ -56,6 +56,7 @@ import {
 import { PermissionRequired } from "@/components/app/PermissionRequired";
 import { toast } from "sonner";
 import { z } from "zod";
+import { cn } from "@/lib/utils";
 
 type TeamRole = "owner" | "admin" | "member";
 type MemberStatus = "active" | "invited";
@@ -319,72 +320,81 @@ export default function Team() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="w-[180px]">Name</TableHead>
+                    <TableHead className="w-[220px]">Email</TableHead>
+                    <TableHead className="w-[180px]">Role</TableHead>
+                    <TableHead className="w-[100px]">Status</TableHead>
+                    <TableHead className="w-[60px] text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {members.map((m) => {
                     const isOwnerRow = m.role === "owner";
+                    const isInvited = m.status === "invited";
                     const canEditRole = canManage && !isOwnerRow;
                     const canRemove = canManage && !isOwnerRow;
-                    const roleBadgeVariant = m.role === "owner" ? "default" : m.role === "admin" ? "default" : "secondary";
 
                     return (
-                      <TableRow key={m.id}>
-                        <TableCell className="font-medium">{m.name}{isOwnerRow ? " (Owner)" : ""}</TableCell>
-                        <TableCell className="text-muted-foreground">{m.email}</TableCell>
-                        <TableCell>
+                      <TableRow 
+                        key={m.id} 
+                        className={cn(
+                          isInvited && "bg-muted/30",
+                          isOwnerRow && "bg-accent/30"
+                        )}
+                      >
+                        <TableCell className="font-medium align-middle">
+                          <div className="flex items-center gap-2">
+                            {m.name}
+                            {isOwnerRow && (
+                              <Badge variant="default" className="text-xs">
+                                <Crown className="w-3 h-3 mr-1" />
+                                Owner
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className={cn("align-middle", isInvited ? "text-muted-foreground/70" : "text-muted-foreground")}>
+                          {m.email}
+                        </TableCell>
+                        <TableCell className="align-middle">
                           {isOwnerRow ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span>
-                                  <Badge variant={roleBadgeVariant} className="capitalize">{m.role}</Badge>
+                                <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                                  <Shield className="w-4 h-4" />
+                                  Owner (locked)
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent>Only the owner can transfer ownership.</TooltipContent>
                             </Tooltip>
                           ) : (
-                            <div className="flex items-center gap-2">
-                              <Select
-                                value={m.role}
-                                onValueChange={(v) => handleChangeRole(m.id, v as TeamRole)}
-                                disabled={!canEditRole}
-                              >
-                                <SelectTrigger className="w-[140px]">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="admin">Admin</SelectItem>
-                                  <SelectItem value="member">Member</SelectItem>
-                                </SelectContent>
-                              </Select>
-
-                              {!canEditRole && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span>
-                                      <Badge variant="outline">Locked</Badge>
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>This action is only available to Owners.</TooltipContent>
-                                </Tooltip>
-                              )}
-                            </div>
+                            <Select
+                              value={m.role}
+                              onValueChange={(v) => handleChangeRole(m.id, v as TeamRole)}
+                              disabled={!canEditRole}
+                            >
+                              <SelectTrigger className="w-[130px] h-9">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="member">Member</SelectItem>
+                              </SelectContent>
+                            </Select>
                           )}
                         </TableCell>
-                        <TableCell>
-                          <Badge variant={m.status === "active" ? "secondary" : "outline"}>
+                        <TableCell className="align-middle">
+                          <Badge 
+                            variant={m.status === "active" ? "secondary" : "outline"}
+                            className={cn(isInvited && "text-muted-foreground border-dashed")}
+                          >
                             {m.status === "active" ? "Active" : "Invited"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right align-middle">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <MoreHorizontal className="w-4 h-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -400,20 +410,21 @@ export default function Team() {
                                 </>
                               ) : (
                                 <>
-                                  <DropdownMenuItem
-                                    onClick={() => handleRemoveMember(m.id)}
-                                    disabled={!canRemove}
-                                    className="text-destructive focus:text-destructive"
-                                  >
-                                    Remove member
-                                  </DropdownMenuItem>
+                                  {!isOwnerRow && (
+                                    <DropdownMenuItem
+                                      onClick={() => handleRemoveMember(m.id)}
+                                      disabled={!canRemove}
+                                      className="text-destructive focus:text-destructive"
+                                    >
+                                      Remove member
+                                    </DropdownMenuItem>
+                                  )}
                                 </>
                               )}
 
                               {isOwnerRow && (
                                 <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem disabled>
+                                  <DropdownMenuItem disabled className="text-muted-foreground">
                                     Owner role is locked
                                   </DropdownMenuItem>
                                 </>
