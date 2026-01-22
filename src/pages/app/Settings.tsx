@@ -4,6 +4,7 @@ import {
   User, 
   Lock,
   Bell,
+  Users,
   Trash2,
   Save
 } from "lucide-react";
@@ -61,6 +62,10 @@ export default function Settings() {
             <Bell className="w-4 h-4 mr-2" />
             Notifications
           </TabsTrigger>
+            <TabsTrigger value="team" onClick={() => navigate("/app/settings/team")}>
+              <Users className="w-4 h-4 mr-2" />
+              Team
+            </TabsTrigger>
         </TabsList>
 
         {/* Profile Tab */}
@@ -242,6 +247,13 @@ export default function Settings() {
               <Button>Save Preferences</Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Team Tab (routes to /app/settings/team) */}
+        <TabsContent value="team">
+          <div className="text-sm text-muted-foreground">
+            Redirecting…
+          </div>
         </TabsContent>
       </Tabs>
     </div>
