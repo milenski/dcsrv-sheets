@@ -24,11 +24,13 @@ export function TokenUsageOverTimeChart({
   plan,
   totalPeriodTokens,
   role,
+  compact = false,
 }: {
   data: { date: string; tokens: number }[];
   plan: Plan;
   totalPeriodTokens: number;
   role: "owner" | "admin" | "member";
+  compact?: boolean;
 }) {
   const limit = plan.tokens;
   const isHardLimit = plan.isHardLimit;
@@ -45,7 +47,8 @@ export function TokenUsageOverTimeChart({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[320px]">
+        <div className={cn(compact ? "h-[220px]" : "h-[320px]")}
+        >
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ left: 8, right: 12, top: 10, bottom: 0 }}>
               <defs>
@@ -106,13 +109,13 @@ export function TokenUsageOverTimeChart({
         </div>
 
         {overLimit && isHardLimit ? (
-          <div className={cn("mt-3 text-sm", "text-destructive")}>
+          <div className={cn(compact ? "mt-2 text-xs" : "mt-3 text-sm", "text-destructive")}>
             Limit reached on the Free plan. Usage stops at the limit—upgrade to continue.
           </div>
         ) : null}
 
         {overLimit && !isHardLimit ? (
-          <div className="mt-3 text-sm text-muted-foreground">
+          <div className={cn(compact ? "mt-2 text-xs" : "mt-3 text-sm", "text-muted-foreground")}>
             You’re over the included limit. Additional usage is tracked as overage.
           </div>
         ) : null}

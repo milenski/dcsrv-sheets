@@ -3,13 +3,6 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatTokens, type Plan } from "@/lib/plans";
 import { planHasTeam } from "@/lib/plans";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
 
 type Summary = {
   tokensUsed: number;
@@ -41,106 +34,50 @@ export function UsageSummaryCards({
   canSeeCosts: boolean;
 }) {
   const teamEnabled = planHasTeam(plan);
-  const paidPlan = plan.overagePrice !== null;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div
+      className={cn(
+        "grid gap-3",
+        teamEnabled ? "grid-cols-2 lg:grid-cols-4" : "grid-cols-3",
+      )}
+    >
       <Card className={cn("shadow-card", statusClasses(summary.usagePercentage))}>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Tokens used</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-end justify-between gap-3">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-2xl font-semibold">{formatTokens(summary.tokensUsed)}</p>
-              <p className="text-xs text-muted-foreground">Current period</p>
+              <p className="text-xs text-muted-foreground">Tokens used</p>
+              <p className="text-lg font-semibold leading-tight">{formatTokens(summary.tokensUsed)}</p>
             </div>
-            <Badge variant="outline">{Math.round(summary.usagePercentage)}%</Badge>
+            <Badge variant="outline" className="text-xs">
+              {Math.round(summary.usagePercentage)}%
+            </Badge>
           </div>
         </CardContent>
       </Card>
 
       <Card className="shadow-card">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Documents processed</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-2xl font-semibold">{summary.documents.toLocaleString()}</p>
-          <p className="text-xs text-muted-foreground">Current period</p>
+        <CardContent className="p-4">
+          <p className="text-xs text-muted-foreground">Documents</p>
+          <p className="text-lg font-semibold leading-tight">{summary.documents.toLocaleString()}</p>
         </CardContent>
       </Card>
 
       <Card className="shadow-card">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Remaining tokens</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-2xl font-semibold">{formatTokens(summary.remainingTokens)}</p>
-          <p className="text-xs text-muted-foreground">Until reset</p>
+        <CardContent className="p-4">
+          <p className="text-xs text-muted-foreground">Remaining tokens</p>
+          <p className="text-lg font-semibold leading-tight">{formatTokens(summary.remainingTokens)}</p>
         </CardContent>
       </Card>
 
-      {paidPlan && (
+      {teamEnabled ? (
         <Card className="shadow-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Overage tokens</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold">{formatTokens(summary.overageTokens)}</p>
-            <p className="text-xs text-muted-foreground">Informational</p>
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Active users</p>
+            <p className="text-lg font-semibold leading-tight">{summary.activeUsers.toLocaleString()}</p>
           </CardContent>
         </Card>
-      )}
-
-      {paidPlan && (
-        <Card className="shadow-card">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm">Estimated overage cost</CardTitle>
-              {!canSeeCosts ? (
-                <Badge variant="secondary" className="text-xs">
-                  Owner only
-                </Badge>
-              ) : null}
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <p className={cn("text-2xl font-semibold", !canSeeCosts && "text-muted-foreground")}>
-                {canSeeCosts ? `€${summary.overageCost.toFixed(2)}` : "Hidden"}
-              </p>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="inline-flex" aria-label="About overage estimates">
-                      <Info className="w-4 h-4 text-muted-foreground" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <p className="text-xs">
-                      This is an estimate based on included tokens and your plan’s overage pricing.
-                      {role !== "owner" ? " Only Owners can view billing costs." : ""}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <p className="text-xs text-muted-foreground">Informational</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {teamEnabled && (
-        <Card className="shadow-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Active users</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold">{summary.activeUsers.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">Current period</p>
-          </CardContent>
-        </Card>
-      )}
+      ) : null}
     </div>
   );
 }
