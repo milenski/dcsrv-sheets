@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { 
   CreditCard, 
@@ -7,7 +7,8 @@ import {
   Building2,
   Download,
   ExternalLink,
-  Info
+  Info,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,10 +24,19 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { TokenUsageMeter } from "@/components/app/TokenUsageMeter";
 import { OverageWarning } from "@/components/app/OverageWarning";
 import { useUsage } from "@/hooks/useUsage";
-import { canAccessBilling, useRole } from "@/hooks/useRole";
-import { PermissionRequired } from "@/components/app/PermissionRequired";
-import { PLANS_ARRAY, TOKEN_DISCLAIMER, formatTokens } from "@/lib/plans";
+import { useRole } from "@/hooks/useRole";
+import { PLANS_ARRAY, TOKEN_DISCLAIMER, formatTokens, planHasTeam } from "@/lib/plans";
 import { cn } from "@/lib/utils";
+import { PeriodSelector } from "@/components/app/billing/PeriodSelector";
+import { UsageSummaryCards } from "@/components/app/billing/UsageSummaryCards";
+import { TokenUsageOverTimeChart } from "@/components/app/billing/TokenUsageOverTimeChart";
+import { UsageBreakdownTable } from "@/components/app/billing/UsageBreakdownTable";
+import {
+  aggregateDailyTokens,
+  generateMockUsageEvents,
+  sumUsage,
+  type BillingPeriod,
+} from "@/lib/usageAnalyticsMock";
 
 const invoices = [
   { id: "inv-001", date: "Jan 1, 2026", amount: 25, status: "paid", description: "Standard Plan" },
@@ -37,24 +47,35 @@ export default function Billing() {
   const usage = useUsage();
   const { role } = useRole();
   const [selectedPlan, setSelectedPlan] = useState(usage.plan.id);
+  const [period, setPeriod] = useState<BillingPeriod>("30d");
 
-  if (!canAccessBilling(role)) {
-    return (
-      <PermissionRequired
-        description="Billing & Usage is available to Owners only. Ask your workspace owner to manage billing or transfer ownership."
-        actions={
-          <div className="flex items-center gap-2">
-            <Button asChild variant="outline">
-              <Link to="/app">Back to Dashboard</Link>
-            </Button>
-            <Button asChild>
-              <Link to="/pricing">View plans</Link>
-            </Button>
-          </div>
-        }
-      />
-    );
-  }
+  const canSeeCosts = role === "owner";
+  const teamEnabled = planHasTeam(usage.plan);
+
+  const events = useMemo(() => {
+    return generateMockUsageEvents({
+      period,
+      planId: usage.plan.id,
+      usedTokensMonthly: usage.usedTokens,
+      includeUsers: teamEnabled,
+      seed: 1337,
+    });
+  }, [period, teamEnabled, usage.plan.id, usage.usedTokens]);
+
+  const daily = useMemo(() => aggregateDailyTokens(events), [events]);
+  const totals = useMemo(() => sumUsage(events), [events]);
+
+  const summary = useMemo(() => {
+    return {
+      tokensUsed: totals.tokens,
+      documents: totals.documents,
+      remainingTokens: usage.remainingTokens,
+      overageTokens: usage.overageTokens,
+      overageCost: usage.overageCost,
+      activeUsers: totals.users.size,
+      usagePercentage: usage.usagePercentage,
+    };
+  }, [totals, usage.overageCost, usage.overageTokens, usage.remainingTokens, usage.usagePercentage]);
 
   const planIcons = {
     free: Zap,
@@ -70,8 +91,63 @@ export default function Billing() {
         description="Manage your subscription and view usage details."
       />
 
-      {/* Overage Warning */}
-      {usage.overageTokens > 0 && usage.plan.overagePrice && (
+      {/* Period selector */}
+      <div className="mb-6">
+        <PeriodSelector value={period} onChange={setPeriod} />
+      </div>
+
+      {/* Usage warnings */}
+      {usage.usagePercentage >= 80 && usage.usagePercentage < 95 ? (
+        <div className="mb-6 rounded-lg border bg-muted/20 p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="font-medium">You're approaching your monthly limit.</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Keep an eye on token usage to avoid interruption.
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {usage.usagePercentage >= 95 && usage.usagePercentage < 100 ? (
+        <div className="mb-6 rounded-lg border border-orange-500/30 bg-orange-500/5 p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-5 h-5 text-orange-600" />
+            </div>
+            <div>
+              <p className="font-medium text-orange-700">You're close to your monthly limit.</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Consider upgrading if you expect more usage this month.
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {usage.usagePercentage >= 100 && usage.plan.isHardLimit ? (
+        <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+          <p className="font-medium text-destructive">Hard limit reached.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            New extractions are disabled on the Free plan until your tokens reset.
+          </p>
+          <div className="mt-3 flex items-center gap-2">
+            <Button asChild>
+              <Link to="/pricing">Upgrade plan</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/app">Back to Dashboard</Link>
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Overage Warning (Owner-only cost visibility) */}
+      {canSeeCosts && usage.overageTokens > 0 && usage.plan.overagePrice && (
         <OverageWarning
           usedTokens={usage.usedTokens}
           includedTokens={usage.includedTokens}
@@ -81,6 +157,21 @@ export default function Billing() {
           className="mb-8"
         />
       )}
+
+      {/* Summary cards */}
+      <div className="mb-6">
+        <UsageSummaryCards plan={usage.plan} role={role} summary={summary} canSeeCosts={canSeeCosts} />
+      </div>
+
+      {/* Main chart */}
+      <div className="mb-6">
+        <TokenUsageOverTimeChart data={daily} plan={usage.plan} totalPeriodTokens={summary.tokensUsed} role={role} />
+      </div>
+
+      {/* Breakdown table */}
+      <div className="mb-8">
+        <UsageBreakdownTable events={events} plan={usage.plan} />
+      </div>
 
       {/* Current Usage */}
       <Card className="shadow-card mb-8">
@@ -96,7 +187,7 @@ export default function Billing() {
             includedTokens={usage.includedTokens}
             remainingTokens={usage.remainingTokens}
             overageTokens={usage.overageTokens}
-            overageCost={usage.overageCost}
+            overageCost={canSeeCosts ? usage.overageCost : 0}
             usagePercentage={usage.usagePercentage}
             usageStatus={usage.usageStatus}
             planName={usage.plan.name}
@@ -178,13 +269,26 @@ export default function Billing() {
                     )}
                   </div>
 
-                  <Button 
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <Button 
                     className="w-full" 
                     variant={isCurrent ? "outline" : "default"}
                     disabled={isCurrent}
                   >
                     {isCurrent ? "Current Plan" : "Upgrade"}
                   </Button>
+                        </div>
+                      </TooltipTrigger>
+                      {!canSeeCosts ? (
+                        <TooltipContent side="top">
+                          <p className="text-xs">Only Owners can change billing.</p>
+                        </TooltipContent>
+                      ) : null}
+                    </Tooltip>
+                  </TooltipProvider>
                 </CardContent>
               </Card>
             );
@@ -194,7 +298,7 @@ export default function Billing() {
 
       <Separator className="my-8" />
 
-      {/* Payment Method */}
+      {/* Payment Method (Owner-only) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card className="shadow-card">
           <CardHeader>
@@ -211,20 +315,48 @@ export default function Billing() {
                   <p className="text-sm text-muted-foreground">Add a card to upgrade</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm">Add Card</Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <Button variant="outline" size="sm" disabled={!canSeeCosts}>
+                        Add Card
+                      </Button>
+                    </div>
+                  </TooltipTrigger>
+                  {!canSeeCosts ? (
+                    <TooltipContent side="top">
+                      <p className="text-xs">Owner only</p>
+                    </TooltipContent>
+                  ) : null}
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </CardContent>
         </Card>
 
-        {/* Invoices */}
+        {/* Invoices (Owner-only amounts) */}
         <Card className="shadow-card">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Invoices</CardTitle>
-              <Button variant="ghost" size="sm">
-                View All
-                <ExternalLink className="w-4 h-4 ml-1" />
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <Button variant="ghost" size="sm" disabled={!canSeeCosts}>
+                        View All
+                        <ExternalLink className="w-4 h-4 ml-1" />
+                      </Button>
+                    </div>
+                  </TooltipTrigger>
+                  {!canSeeCosts ? (
+                    <TooltipContent side="top">
+                      <p className="text-xs">Owner only</p>
+                    </TooltipContent>
+                  ) : null}
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </CardHeader>
           <CardContent>
@@ -244,13 +376,28 @@ export default function Billing() {
                       <p className="text-xs text-muted-foreground">{invoice.date}</p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium">€{invoice.amount}</span>
+                      <span className={cn("text-sm font-medium", !canSeeCosts && "text-muted-foreground")}>
+                        {canSeeCosts ? `€${invoice.amount}` : "Hidden"}
+                      </span>
                       <Badge variant="secondary" className="capitalize">
                         {invoice.status}
                       </Badge>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <Download className="w-4 h-4" />
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" disabled={!canSeeCosts}>
+                                <Download className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TooltipTrigger>
+                          {!canSeeCosts ? (
+                            <TooltipContent side="top">
+                              <p className="text-xs">Owner only</p>
+                            </TooltipContent>
+                          ) : null}
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </div>
                 ))}
