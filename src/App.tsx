@@ -19,6 +19,7 @@ import Security from "./pages/Security";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
+import NewHomeLanding from "./pages/NewHomeLanding";
 
 // App pages
 import Dashboard from "./pages/app/Dashboard";
@@ -61,6 +62,9 @@ const App = () => (
             {/* Auth pages - no header/footer, standalone */}
             <Route element={<Login />} path="/login" />
             <Route element={<Signup />} path="/signup" />
+
+            {/* New landing page experiment - standalone with its own nav/footer */}
+            <Route element={<NewHomeLanding />} path="/new-home" />
 
             {/* App routes - protected by AppLayout */}
             <Route path="/app" element={<AppLayout />}>
