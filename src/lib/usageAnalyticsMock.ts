@@ -141,6 +141,16 @@ export function aggregateDailyTokens(events: UsageEvent[]) {
     .map(([date, tokens]) => ({ date, tokens }));
 }
 
+export function aggregateDailyDocuments(events: UsageEvent[]) {
+  const map = new Map<string, number>();
+  for (const e of events) {
+    map.set(e.date, (map.get(e.date) ?? 0) + e.documents);
+  }
+  return Array.from(map.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, documents]) => ({ date, documents }));
+}
+
 export function sumUsage(events: UsageEvent[]) {
   return events.reduce(
     (acc, e) => {
