@@ -50,6 +50,8 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useApiAccess } from "@/hooks/useApiAccess";
+import { useUsage } from "@/hooks/useUsage";
+import { planHasApi } from "@/lib/plans";
 
 // Mock template data
 const mockTemplate = {
@@ -99,6 +101,8 @@ export default function TemplateDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { apiEnabled } = useApiAccess();
+  const usage = useUsage();
+  const apiAllowedByPlan = planHasApi(usage.plan);
   const [template, setTemplate] = useState(mockTemplate);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(template.name);
@@ -557,10 +561,18 @@ export default function TemplateDetail() {
                           <SelectItem value="inherit">
                             Inherit from account (currently {apiEnabled ? "On" : "Off"})
                           </SelectItem>
-                          <SelectItem value="enabled">Enabled</SelectItem>
+                        <SelectItem value="enabled" disabled={!apiAllowedByPlan}>
+                          Enabled
+                        </SelectItem>
                           <SelectItem value="disabled">Disabled</SelectItem>
                         </SelectContent>
                       </Select>
+
+                    {!apiAllowedByPlan && (
+                      <p className="text-sm text-muted-foreground">
+                        API access isn’t available on your current plan. Upgrade to enable API integrations for this template.
+                      </p>
+                    )}
                       
                       <div className="flex items-center gap-2 text-sm">
                         <span className="text-muted-foreground">Effective status:</span>

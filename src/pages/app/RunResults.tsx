@@ -42,6 +42,8 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useApiAccess } from "@/hooks/useApiAccess";
+import { useUsage } from "@/hooks/useUsage";
+import { planHasWebhooks } from "@/lib/plans";
 
 // Mock data - add templateApiAccess to simulate template override
 const mockRun = {
@@ -80,11 +82,19 @@ const statusColors = { completed: "text-green-600", failed: "text-destructive", 
 export default function RunResults() {
   const { runId } = useParams();
   const navigate = useNavigate();
-  const { apiEnabled } = useApiAccess();
+  const usage = useUsage();
+  const { apiEnabled, setApiEnabled } = useApiAccess();
   const [activeSheet, setActiveSheet] = useState("invoices");
   const [outputFormat, setOutputFormat] = useState<"spreadsheet" | "json">("spreadsheet");
   const [jsonDialogOpen, setJsonDialogOpen] = useState(false);
   const [selectedDocJson, setSelectedDocJson] = useState<string | null>(null);
+
+  const webhooksEnabledForPlan = planHasWebhooks(usage.plan);
+
+  const handleEnableApi = () => {
+    setApiEnabled(true);
+    toast.success("API access enabled");
+  };
 
   const completedDocs = mockRun.documents.filter(d => d.status === "completed").length;
   const failedDocs = mockRun.documents.filter(d => d.status === "failed").length;
@@ -255,18 +265,31 @@ export default function RunResults() {
             ) : (
               <>
                 {/* API Visibility - Show warnings if API is not available */}
-                {!apiEnabled ? (
+                 {!apiEnabled ? (
                   <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
                     <div className="flex items-start gap-3">
                       <Zap className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                       <div className="flex-1">
-                        <p className="text-sm font-medium mb-1">Enable API access to fetch results as JSON via API</p>
-                        <p className="text-sm text-muted-foreground mb-3">
-                          With API access, you can programmatically retrieve extraction results and receive webhook notifications when jobs complete.
-                        </p>
-                        <Button size="sm" onClick={() => navigate("/app/developers")}>
-                          Enable API
-                        </Button>
+                         <p className="text-sm font-medium mb-1">
+                           Enable API access to fetch results as JSON and integrate with your systems.
+                         </p>
+                         <p className="text-sm text-muted-foreground mb-3">
+                           Turn on API access to programmatically retrieve extraction results.
+                         </p>
+                         <div className="flex items-center gap-3">
+                           <Button size="sm" onClick={handleEnableApi}>
+                             Enable API
+                           </Button>
+                           <Button variant="outline" size="sm" onClick={() => navigate("/app/developers")}>
+                             View API settings
+                           </Button>
+                         </div>
+
+                         {!webhooksEnabledForPlan && (
+                           <p className="text-xs text-muted-foreground mt-3">
+                             Webhooks are available on Standard and Pro plans.
+                           </p>
+                         )}
                       </div>
                     </div>
                   </div>
@@ -297,6 +320,12 @@ export default function RunResults() {
                         <Button variant="outline" size="sm" onClick={handleDownloadJson}><Download className="w-4 h-4 mr-1" />Download</Button>
                       </div>
                     </div>
+
+                      {!webhooksEnabledForPlan && (
+                        <p className="text-xs text-muted-foreground">
+                          Webhooks are available on Standard and Pro plans.
+                        </p>
+                      )}
                     <pre className="bg-muted rounded-lg p-4 text-sm overflow-auto max-h-[400px] font-mono">{JSON.stringify(mockRun.extractedData, null, 2)}</pre>
                   </div>
                 )}

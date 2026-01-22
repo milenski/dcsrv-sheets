@@ -501,7 +501,8 @@ export default function Developers() {
                   </span>
                 </p>
               </div>
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -561,7 +562,6 @@ curl https://api.docservant.com/v1/results/job_xyz789.xlsx \\
                   </pre>
                 </div>
               </div>
-              )}
             </CardContent>
           </Card>
         )}
