@@ -41,6 +41,8 @@ import { cn } from "@/lib/utils";
 import { useUsage } from "@/hooks/useUsage";
 import { useApiAccess } from "@/hooks/useApiAccess";
 import { planHasWebhooks } from "@/lib/plans";
+import { canAccessDevelopers, useRole } from "@/hooks/useRole";
+import { PermissionRequired } from "@/components/app/PermissionRequired";
 
 // Mock data
 const mockApiKey = {
@@ -65,6 +67,20 @@ export default function Developers() {
   const usage = useUsage();
   const { apiEnabled, setApiEnabled } = useApiAccess();
   const webhooksEnabledForPlan = useMemo(() => planHasWebhooks(usage.plan), [usage.plan]);
+  const { role } = useRole();
+
+  if (!canAccessDevelopers(role)) {
+    return (
+      <PermissionRequired
+        description="Developers is available to Owners and Admins. Members can run extractions and view results, but can’t manage API settings."
+        actions={
+          <Button asChild variant="outline">
+            <Link to="/app">Back to Dashboard</Link>
+          </Button>
+        }
+      />
+    );
+  }
 
   const [hasApiKey, setHasApiKey] = useState(true);
   const [newKeyVisible, setNewKeyVisible] = useState(false);
