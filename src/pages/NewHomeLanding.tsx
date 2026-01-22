@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
-  FileSpreadsheet,
+  FileText,
   Code2,
   Upload,
   FileOutput,
@@ -21,7 +21,6 @@ import {
   FileJson,
   Webhook,
   Clock,
-  Table,
   Download,
 } from "lucide-react";
 import {
@@ -32,6 +31,25 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 // ============================================================================
+// LOCAL LOGO (Platform branding)
+// ============================================================================
+function PlatformLogo() {
+  return (
+    <Link to="/new-home" className="flex items-center gap-2">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shrink-0">
+        <FileText className="h-4 w-4 text-primary-foreground" />
+      </div>
+      <span className="text-lg font-semibold text-foreground">
+        DocServant
+        <span className="ml-1 text-sm font-normal text-muted-foreground">
+          Platform
+        </span>
+      </span>
+    </Link>
+  );
+}
+
+// ============================================================================
 // LOCAL NAVBAR (only for this page)
 // ============================================================================
 function NewHomeNavbar() {
@@ -40,16 +58,11 @@ function NewHomeNavbar() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="container flex h-16 items-center justify-between">
-        {/* Logo */}
-        <Link to="/new-home" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <FileSpreadsheet className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="text-lg font-semibold text-foreground">DocServant</span>
-        </Link>
+        <PlatformLogo />
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-6">
+          {/* Product Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Product <ChevronDown className="h-4 w-4" />
@@ -57,7 +70,7 @@ function NewHomeNavbar() {
             <DropdownMenuContent align="start">
               <DropdownMenuItem asChild>
                 <a href="#studio" className="flex items-center gap-2">
-                  <FileSpreadsheet className="h-4 w-4" />
+                  <FileText className="h-4 w-4" />
                   DocServant Studio
                 </a>
               </DropdownMenuItem>
@@ -70,12 +83,60 @@ function NewHomeNavbar() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <a href="#use-cases" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Use cases
-          </a>
-          <Link to="/app/developers/docs" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Developers
-          </Link>
+          {/* Use cases Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Use cases <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem asChild>
+                <a href="#use-cases" className="flex items-center gap-2">
+                  <Receipt className="h-4 w-4" />
+                  Accounting
+                </a>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a href="#use-cases" className="flex items-center gap-2">
+                  <Truck className="h-4 w-4" />
+                  Operations
+                </a>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a href="#use-cases" className="flex items-center gap-2">
+                  <Landmark className="h-4 w-4" />
+                  Finance
+                </a>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a href="#use-cases" className="flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4" />
+                  Admin
+                </a>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Developers Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Developers <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem asChild>
+                <Link to="/app/developers/docs" className="flex items-center gap-2">
+                  <FileJson className="h-4 w-4" />
+                  API Docs
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/app/developers" className="flex items-center gap-2">
+                  <Webhook className="h-4 w-4" />
+                  Webhooks
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Link to="/pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Pricing
           </Link>
@@ -119,12 +180,30 @@ function NewHomeNavbar() {
                 DocServant API
               </a>
             </div>
-            <a href="#use-cases" className="text-sm font-medium text-foreground" onClick={() => setMobileMenuOpen(false)}>
-              Use cases
-            </a>
-            <Link to="/app/developers/docs" className="text-sm font-medium text-foreground" onClick={() => setMobileMenuOpen(false)}>
-              Developers
-            </Link>
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Use cases</span>
+              <a href="#use-cases" className="text-sm font-medium text-foreground pl-2" onClick={() => setMobileMenuOpen(false)}>
+                Accounting
+              </a>
+              <a href="#use-cases" className="text-sm font-medium text-foreground pl-2" onClick={() => setMobileMenuOpen(false)}>
+                Operations
+              </a>
+              <a href="#use-cases" className="text-sm font-medium text-foreground pl-2" onClick={() => setMobileMenuOpen(false)}>
+                Finance
+              </a>
+              <a href="#use-cases" className="text-sm font-medium text-foreground pl-2" onClick={() => setMobileMenuOpen(false)}>
+                Admin
+              </a>
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Developers</span>
+              <Link to="/app/developers/docs" className="text-sm font-medium text-foreground pl-2" onClick={() => setMobileMenuOpen(false)}>
+                API Docs
+              </Link>
+              <Link to="/app/developers" className="text-sm font-medium text-foreground pl-2" onClick={() => setMobileMenuOpen(false)}>
+                Webhooks
+              </Link>
+            </div>
             <Link to="/pricing" className="text-sm font-medium text-foreground" onClick={() => setMobileMenuOpen(false)}>
               Pricing
             </Link>
@@ -155,7 +234,7 @@ function NewHomeFooter() {
           <div className="md:col-span-1">
             <Link to="/new-home" className="flex items-center gap-2 mb-3">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary">
-                <FileSpreadsheet className="h-3.5 w-3.5 text-primary-foreground" />
+                <FileText className="h-3.5 w-3.5 text-primary-foreground" />
               </div>
               <span className="font-semibold text-foreground">DocServant</span>
             </Link>
@@ -197,7 +276,7 @@ function NewHomeFooter() {
               </li>
               <li>
                 <Link to="/app/developers" className="text-muted-foreground hover:text-foreground transition-colors">
-                  API Keys & Webhooks
+                  Webhooks
                 </Link>
               </li>
             </ul>
@@ -227,6 +306,9 @@ function NewHomeFooter() {
         </div>
 
         <div className="mt-8 pt-6 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-muted-foreground">
+            DocServant — Turn documents into structured data.
+          </p>
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} DocServant. All rights reserved.
           </p>
@@ -250,15 +332,10 @@ function HeroSection() {
           className="max-w-3xl mx-auto text-center"
         >
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6">
-            Turn documents into{" "}
-            <span className="text-gradient">structured data</span>.
+            Turn documents into structured data.
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground mb-4">
-            Use <strong>DocServant Studio</strong> in your browser, or integrate{" "}
-            <strong>DocServant API</strong> into your systems.
-          </p>
-          <p className="text-sm text-muted-foreground mb-8">
-            From invoices and receipts to forms and statements.
+          <p className="text-lg md:text-xl text-muted-foreground mb-8">
+            Extract reliable, structured outputs from invoices, statements, forms, and more — using our UI or API.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -276,9 +353,9 @@ function HeroSection() {
 }
 
 // ============================================================================
-// TWO SURFACES SECTION (Studio vs API)
+// TWO WAYS TO EXTRACT SECTION
 // ============================================================================
-function TwoSurfacesSection() {
+function TwoWaysSection() {
   return (
     <section id="studio" className="py-16 bg-muted/30">
       <div className="container">
@@ -304,21 +381,24 @@ function TwoSurfacesSection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="bg-card border border-border rounded-xl p-6 shadow-card"
+            className="bg-card border border-border rounded-xl p-6"
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent">
-                <FileSpreadsheet className="h-5 w-5 text-accent-foreground" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <FileText className="h-5 w-5 text-primary" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">DocServant Studio</h3>
             </div>
+            <p className="text-sm font-medium text-foreground mb-1">
+              Visual interface for humans.
+            </p>
             <p className="text-muted-foreground text-sm mb-4">
-              Upload documents, extract data, export to Excel.
+              Upload documents, define templates, export structured data.
             </p>
             <ul className="space-y-2 mb-6">
               <li className="flex items-center gap-2 text-sm text-foreground">
                 <LayoutTemplate className="h-4 w-4 text-primary" />
-                Templates for consistent extraction
+                Visual template builder
               </li>
               <li className="flex items-center gap-2 text-sm text-foreground">
                 <Upload className="h-4 w-4 text-primary" />
@@ -326,7 +406,7 @@ function TwoSurfacesSection() {
               </li>
               <li className="flex items-center gap-2 text-sm text-foreground">
                 <Download className="h-4 w-4 text-primary" />
-                Export to XLSX and CSV
+                XLSX & CSV export
               </li>
             </ul>
             <Button asChild className="w-full">
@@ -341,16 +421,19 @@ function TwoSurfacesSection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-card border border-border rounded-xl p-6 shadow-card"
+            className="bg-card border border-border rounded-xl p-6"
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent">
-                <Code2 className="h-5 w-5 text-accent-foreground" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <Code2 className="h-5 w-5 text-primary" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">DocServant API</h3>
             </div>
+            <p className="text-sm font-medium text-foreground mb-1">
+              Built for developers and systems.
+            </p>
             <p className="text-muted-foreground text-sm mb-4">
-              Integrate document-to-data into your workflow.
+              Send documents, receive structured JSON via API or webhooks.
             </p>
             <ul className="space-y-2 mb-6">
               <li className="flex items-center gap-2 text-sm text-foreground">
@@ -363,7 +446,7 @@ function TwoSurfacesSection() {
               </li>
               <li className="flex items-center gap-2 text-sm text-foreground">
                 <Webhook className="h-4 w-4 text-primary" />
-                Webhooks (Standard & Pro)
+                Webhooks
               </li>
             </ul>
             <Button variant="outline" asChild className="w-full">
@@ -389,12 +472,12 @@ function HowItWorksSection() {
     {
       icon: Upload,
       title: "Process documents",
-      description: "Upload files via Studio or send via API.",
+      description: "Upload via Studio or send via API.",
     },
     {
       icon: FileOutput,
       title: "Get structured outputs",
-      description: "Download XLSX, CSV, or receive JSON via webhook.",
+      description: "Download spreadsheets or receive JSON.",
     },
   ];
 
@@ -452,7 +535,7 @@ function UseCasesSection() {
     {
       icon: Truck,
       title: "Operations",
-      description: "Purchase orders, logistics docs",
+      description: "Purchase orders, logistics documents",
     },
     {
       icon: Landmark,
@@ -479,23 +562,20 @@ function UseCasesSection() {
           <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
             Use cases
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            Extract structured data from any document type.
-          </p>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
           {useCases.map((useCase, index) => (
             <motion.div
               key={useCase.title}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.05 }}
-              className="bg-card border border-border rounded-lg p-5 shadow-card"
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="bg-card border border-border rounded-lg p-5 text-center"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent mb-3">
-                <useCase.icon className="h-5 w-5 text-accent-foreground" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 mx-auto mb-3">
+                <useCase.icon className="h-5 w-5 text-primary" />
               </div>
               <h3 className="font-semibold text-foreground mb-1">{useCase.title}</h3>
               <p className="text-sm text-muted-foreground">{useCase.description}</p>
@@ -508,13 +588,22 @@ function UseCasesSection() {
 }
 
 // ============================================================================
-// TRUST / SECURITY SECTION
+// TRUST & SECURITY SECTION
 // ============================================================================
 function TrustSection() {
-  const points = [
-    { icon: Shield, text: "Secure by design" },
-    { icon: Lock, text: "Data encrypted in transit" },
-    { icon: Settings2, text: "You control retention settings" },
+  const trustPoints = [
+    {
+      icon: Shield,
+      text: "Secure by design",
+    },
+    {
+      icon: Lock,
+      text: "Data encrypted in transit",
+    },
+    {
+      icon: Settings2,
+      text: "You control retention settings",
+    },
   ];
 
   return (
@@ -525,29 +614,30 @@ function TrustSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="max-w-3xl mx-auto"
+          className="text-center mb-8"
         >
-          <div className="bg-card border border-border rounded-xl p-8 shadow-card">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-1">
-                  Built with security in mind
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Your documents and data are protected.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-4">
-                {points.map((point) => (
-                  <div key={point.text} className="flex items-center gap-2 text-sm text-foreground">
-                    <point.icon className="h-4 w-4 text-primary" />
-                    {point.text}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+            Built with security in mind
+          </h2>
         </motion.div>
+
+        <div className="flex flex-wrap justify-center gap-8 max-w-3xl mx-auto">
+          {trustPoints.map((point, index) => (
+            <motion.div
+              key={point.text}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: index * 0.1 }}
+              className="flex items-center gap-3"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+                <point.icon className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-sm font-medium text-foreground">{point.text}</span>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -558,11 +648,11 @@ function TrustSection() {
 // ============================================================================
 export default function NewHomeLanding() {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background">
       <NewHomeNavbar />
       <main className="flex-1">
         <HeroSection />
-        <TwoSurfacesSection />
+        <TwoWaysSection />
         <HowItWorksSection />
         <UseCasesSection />
         <TrustSection />
