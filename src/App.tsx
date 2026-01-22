@@ -7,6 +7,7 @@ import { Layout } from "@/components/layout/Layout";
 import { AppLayout } from "@/components/app/AppLayout";
 import { AuthProvider } from "@/hooks/useAuth";
 import { UsageProvider } from "@/hooks/useUsage";
+import { RoleProvider } from "@/hooks/useRole";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import Home from "./pages/Home";
 import Pricing from "./pages/Pricing";
@@ -46,7 +47,8 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <UsageProvider>
-          <Routes>
+            <RoleProvider>
+              <Routes>
             {/* Marketing site */}
             <Route element={<Layout><Home /></Layout>} path="/" />
             <Route element={<Layout><Pricing /></Layout>} path="/pricing" />
@@ -74,13 +76,15 @@ const App = () => (
               <Route path="history" element={<History />} />
               <Route path="billing" element={<Billing />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="team" element={<Team />} />
               <Route path="settings/team" element={<Team />} />
               <Route path="developers" element={<Developers />} />
               <Route path="developers/docs" element={<DevelopersDocs />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
-          </Routes>
+              </Routes>
+            </RoleProvider>
           </UsageProvider>
         </AuthProvider>
       </BrowserRouter>

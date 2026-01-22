@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useUsage } from "@/hooks/useUsage";
+import { useRole, type AppRole } from "@/hooks/useRole";
 import { Settings2, X } from "lucide-react";
 
 /**
@@ -10,6 +11,7 @@ import { Settings2, X } from "lucide-react";
 export function DevTools() {
   const [isOpen, setIsOpen] = useState(false);
   const { setPlan, setMockUsage, setMockCounts, plan, usedTokens, templateCount, runCount } = useUsage();
+  const { role, setRole } = useRole();
 
   // Quick presets
   const presets = [
@@ -97,11 +99,53 @@ export function DevTools() {
       </div>
 
       <div className="p-3 space-y-3 max-h-[60vh] overflow-y-auto">
+        {/* Quick switches */}
+        <div className="space-y-2">
+          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Simulate</div>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { id: "free", label: "Free" },
+              { id: "light", label: "Light" },
+              { id: "standard", label: "Standard" },
+              { id: "pro", label: "Pro" },
+            ] as const).map((p) => (
+              <Button
+                key={p.id}
+                size="sm"
+                variant={plan.id === p.id ? "default" : "outline"}
+                onClick={() => setPlan(p.id)}
+              >
+                {p.label}
+              </Button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              { id: "owner", label: "Owner" },
+              { id: "admin", label: "Admin" },
+              { id: "member", label: "Member" },
+            ] as const).map((r: { id: AppRole; label: string }) => (
+              <Button
+                key={r.id}
+                size="sm"
+                variant={role === r.id ? "default" : "outline"}
+                onClick={() => setRole(r.id)}
+              >
+                {r.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
         {/* Current State */}
         <div className="text-xs space-y-1 p-2 bg-muted/50 rounded-md">
           <div className="font-medium text-foreground">Current State:</div>
           <div className="text-muted-foreground">
             Plan: <span className="text-foreground">{plan.name}</span>
+          </div>
+          <div className="text-muted-foreground">
+            Role: <span className="text-foreground capitalize">{role}</span>
           </div>
           <div className="text-muted-foreground">
             Usage: <span className="text-foreground">{usedTokens.toLocaleString()} / {plan.tokens.toLocaleString()}</span>

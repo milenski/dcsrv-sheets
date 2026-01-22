@@ -14,9 +14,14 @@ import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { useUsage } from "@/hooks/useUsage";
+import { canAccessBilling, useRole } from "@/hooks/useRole";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function AppHeader() {
   const { user, logout } = useAuth();
+  const usage = useUsage();
+  const { role } = useRole();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -45,11 +50,27 @@ export function AppHeader() {
       {/* Right side */}
       <div className="flex items-center gap-3">
         {/* Plan Badge */}
-        <Link to="/app/billing">
-          <Badge variant="secondary" className="font-medium cursor-pointer hover:bg-secondary/80">
-            Free Plan
-          </Badge>
-        </Link>
+        {canAccessBilling(role) ? (
+          <Link to="/app/billing">
+            <Badge variant="secondary" className="font-medium cursor-pointer hover:bg-secondary/80">
+              {usage.plan.name} Plan
+            </Badge>
+          </Link>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="secondary" className="font-medium cursor-not-allowed opacity-80">
+                {usage.plan.name} Plan
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>This action is only available to Owners.</TooltipContent>
+          </Tooltip>
+        )}
+
+        {/* Role Badge */}
+        <Badge variant="outline" className="hidden sm:inline-flex capitalize">
+          {role}
+        </Badge>
 
         {/* Upgrade CTA */}
         <Button size="sm" variant="outline" asChild className="hidden sm:inline-flex">
@@ -76,7 +97,10 @@ export function AppHeader() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
               <div className="flex flex-col">
-                <span className="font-medium">{user?.name || "User"}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{user?.name || "User"}</span>
+                  <Badge variant="outline" className="capitalize">{role}</Badge>
+                </div>
                 <span className="text-xs text-muted-foreground">{user?.email}</span>
               </div>
             </DropdownMenuLabel>
@@ -84,9 +108,20 @@ export function AppHeader() {
             <DropdownMenuItem asChild>
               <Link to="/app/settings">Settings</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/app/billing">Billing & Usage</Link>
-            </DropdownMenuItem>
+            {canAccessBilling(role) ? (
+              <DropdownMenuItem asChild>
+                <Link to="/app/billing">Billing & Usage</Link>
+              </DropdownMenuItem>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <DropdownMenuItem disabled>Billing & Usage</DropdownMenuItem>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>This action is only available to Owners.</TooltipContent>
+              </Tooltip>
+            )}
             <DropdownMenuItem asChild>
               <Link to="/help">Help Center</Link>
             </DropdownMenuItem>

@@ -22,6 +22,8 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/app/PageHeader";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { canAccessDevelopers, useRole } from "@/hooks/useRole";
+import { PermissionRequired } from "@/components/app/PermissionRequired";
 
 // Navigation sections
 const navSections = [
@@ -186,9 +188,24 @@ function EndpointBlock({
 }
 
 export default function DevelopersDocs() {
+  const { role } = useRole();
   const [activeSection, setActiveSection] = useState("quickstart");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const location = useLocation();
+
+  if (!canAccessDevelopers(role)) {
+    return (
+      <PermissionRequired
+        title="Permission required"
+        description="API documentation is available to Owners and Admins."
+        actions={
+          <Button asChild variant="outline">
+            <Link to="/app">Back to Dashboard</Link>
+          </Button>
+        }
+      />
+    );
+  }
 
   // Handle scroll spy
   useEffect(() => {

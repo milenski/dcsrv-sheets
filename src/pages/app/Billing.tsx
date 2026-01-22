@@ -23,6 +23,8 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { TokenUsageMeter } from "@/components/app/TokenUsageMeter";
 import { OverageWarning } from "@/components/app/OverageWarning";
 import { useUsage } from "@/hooks/useUsage";
+import { canAccessBilling, useRole } from "@/hooks/useRole";
+import { PermissionRequired } from "@/components/app/PermissionRequired";
 import { PLANS_ARRAY, TOKEN_DISCLAIMER, formatTokens } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +35,26 @@ const invoices = [
 
 export default function Billing() {
   const usage = useUsage();
+  const { role } = useRole();
   const [selectedPlan, setSelectedPlan] = useState(usage.plan.id);
+
+  if (!canAccessBilling(role)) {
+    return (
+      <PermissionRequired
+        description="Billing & Usage is available to Owners only. Ask your workspace owner to manage billing or transfer ownership."
+        actions={
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline">
+              <Link to="/app">Back to Dashboard</Link>
+            </Button>
+            <Button asChild>
+              <Link to="/pricing">View plans</Link>
+            </Button>
+          </div>
+        }
+      />
+    );
+  }
 
   const planIcons = {
     free: Zap,
