@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { 
   ArrowLeft, 
   ArrowRight, 
@@ -24,6 +24,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
+import { useRole, canManageTemplates } from "@/hooks/useRole";
+import { PermissionRequired } from "@/components/app/PermissionRequired";
 
 const steps = [
   { id: 1, title: "Basics", description: "Name and settings" },
@@ -72,6 +74,9 @@ const mockDetectedSchema = {
 
 export default function TemplateNew() {
   const navigate = useNavigate();
+  const { role } = useRole();
+  const canManage = canManageTemplates(role);
+  
   const [currentStep, setCurrentStep] = useState(1);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -155,6 +160,19 @@ export default function TemplateNew() {
   };
 
   const totalSelectedColumns = Object.values(selectedColumns).flat().length;
+
+  if (!canManage) {
+    return (
+      <PermissionRequired
+        description="Only Owners and Admins can create templates. Members can run extractions and view results."
+        actions={
+          <Button asChild variant="outline">
+            <Link to="/app/templates">Back to Templates</Link>
+          </Button>
+        }
+      />
+    );
+  }
 
   return (
     <div className="min-h-full bg-muted/30">

@@ -48,10 +48,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useApiAccess } from "@/hooks/useApiAccess";
 import { useUsage } from "@/hooks/useUsage";
 import { planHasApi } from "@/lib/plans";
+import { useRole, canManageTemplates } from "@/hooks/useRole";
+import { PermissionRequired } from "@/components/app/PermissionRequired";
 
 // Mock template data
 const mockTemplate = {
@@ -103,11 +106,27 @@ export default function TemplateDetail() {
   const { apiEnabled } = useApiAccess();
   const usage = useUsage();
   const apiAllowedByPlan = planHasApi(usage.plan);
+  const { role } = useRole();
+  const canManage = canManageTemplates(role);
   const [template, setTemplate] = useState(mockTemplate);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(template.name);
   const [templatePrompt, setTemplatePrompt] = useState(template.prompt);
   const [templateApiAccess, setTemplateApiAccess] = useState<"inherit" | "enabled" | "disabled">(template.apiAccess);
+
+  // Permission guard for Members
+  if (!canManage) {
+    return (
+      <PermissionRequired
+        description="Only Owners and Admins can edit templates. Members can run extractions and view results."
+        actions={
+          <Button asChild variant="outline">
+            <Link to="/app/templates">Back to Templates</Link>
+          </Button>
+        }
+      />
+    );
+  }
 
   const enabledSheets = template.sheets.filter(s => s.enabled);
   const totalColumns = template.sheets.flatMap(s => s.columns).filter(c => c.enabled).length;
