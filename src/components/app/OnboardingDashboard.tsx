@@ -59,10 +59,10 @@ export function OnboardingDashboard() {
           <Sparkles className="w-8 h-8 text-primary" />
         </div>
         <h1 className="text-3xl font-bold text-foreground mb-3">
-          Welcome to DocServant for Spreadsheets
+          Welcome to DocServant Platform
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Transform your documents into structured spreadsheet data. 
+          Transform your documents into structured data. 
           Extract invoices, receipts, contracts, and more with AI-powered precision.
         </p>
       </div>
@@ -129,7 +129,7 @@ export function OnboardingDashboard() {
       {/* Quick Links */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Link 
-          to="/app/developers/docs"
+          to="/developers/docs"
           className="block p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors text-center"
         >
           <p className="font-medium text-foreground mb-1">API Documentation</p>

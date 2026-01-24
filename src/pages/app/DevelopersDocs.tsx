@@ -259,7 +259,7 @@ export default function DevelopersDocs() {
 
       <PageHeader 
         title="API Documentation" 
-        description="Integrate DocServant for Spreadsheets with your systems using our API and webhooks."
+        description="Integrate DocServant Platform with your systems using our API and webhooks."
       />
 
       {/* Mobile nav toggle */}

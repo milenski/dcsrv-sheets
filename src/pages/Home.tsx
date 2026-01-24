@@ -71,26 +71,14 @@ function HomeNavbar() {
       <div className="container flex h-16 items-center justify-between">
         <PlatformLogo />
 
-        {/* Desktop Nav - Simple top-level links */}
+        {/* Desktop Nav - Simplified top-level links */}
         <nav className="hidden md:flex items-center gap-6">
-          <a 
-            href="#product" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Product
-          </a>
-          <a 
-            href="#use-cases" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Use cases
-          </a>
-          <a 
-            href="#developers" 
+          <Link 
+            to="/developers/docs" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Developers
-          </a>
+          </Link>
           <Link 
             to="/pricing" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -131,27 +119,13 @@ function HomeNavbar() {
           className="md:hidden border-t border-border bg-background"
         >
           <div className="container py-4 flex flex-col gap-4">
-            <a 
-              href="#product" 
-              className="text-sm font-medium text-foreground" 
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Product
-            </a>
-            <a 
-              href="#use-cases" 
-              className="text-sm font-medium text-foreground" 
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Use cases
-            </a>
-            <a 
-              href="#developers" 
+            <Link 
+              to="/developers/docs" 
               className="text-sm font-medium text-foreground" 
               onClick={() => setMobileMenuOpen(false)}
             >
               Developers
-            </a>
+            </Link>
             <Link 
               to="/pricing" 
               className="text-sm font-medium text-foreground" 
@@ -204,14 +178,14 @@ function HomeFooter() {
             <h4 className="font-medium text-foreground mb-3 text-sm">Product</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#studio" className="text-muted-foreground hover:text-foreground transition-colors">
-                  DocServant Studio
-                </a>
+                <Link to="/examples" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Examples
+                </Link>
               </li>
               <li>
-                <a href="#api" className="text-muted-foreground hover:text-foreground transition-colors">
-                  DocServant API
-                </a>
+                <Link to="/help" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Help Center
+                </Link>
               </li>
               <li>
                 <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">
@@ -226,8 +200,13 @@ function HomeFooter() {
             <h4 className="font-medium text-foreground mb-3 text-sm">Developers</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/app/developers/docs" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link to="/developers/docs" className="text-muted-foreground hover:text-foreground transition-colors">
                   API Documentation
+                </Link>
+              </li>
+              <li>
+                <Link to="/app/developers" className="text-muted-foreground hover:text-foreground transition-colors">
+                  API Keys & Webhooks
                 </Link>
               </li>
             </ul>
@@ -257,9 +236,19 @@ function HomeFooter() {
         </div>
 
         <div className="mt-8 pt-6 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-muted-foreground">
-            DocServant — Turn documents into structured data.
-          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+            <p className="text-sm text-muted-foreground">
+              DocServant — Turn documents into structured data.
+            </p>
+            <a 
+              href="https://docservant.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Powered by the same AI engine as DocServant for Salesforce
+            </a>
+          </div>
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} DocServant. All rights reserved.
           </p>
@@ -349,7 +338,7 @@ function TwoWaysSection() {
               <h3 className="text-lg font-semibold text-foreground">DocServant Studio</h3>
             </div>
             <p className="text-sm font-medium text-foreground mb-1">
-              Visual interface for humans.
+              Web-based interface
             </p>
             <p className="text-muted-foreground text-sm mb-4">
               Upload documents, define templates, export structured data.
@@ -386,7 +375,7 @@ function TwoWaysSection() {
               <h3 className="text-lg font-semibold text-foreground">DocServant API</h3>
             </div>
             <p className="text-sm font-medium text-foreground mb-1">
-              Built for developers and systems.
+              Programmatic access
             </p>
             <p className="text-muted-foreground text-sm mb-4">
               Send documents, receive structured JSON via API or webhooks.
@@ -745,7 +734,7 @@ function DevelopersSection() {
               </div>
               <div>
                 <Button variant="outline" asChild>
-                  <Link to="/app/developers/docs">
+                  <Link to="/developers/docs">
                     Read API docs
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Link>
