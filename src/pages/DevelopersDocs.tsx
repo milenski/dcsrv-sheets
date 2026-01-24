@@ -22,14 +22,15 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-// Navigation sections
+// Navigation sections - reordered for conceptual clarity
 const navSections = [
-  { id: "quickstart", label: "Quickstart", icon: Zap },
+  { id: "how-it-works", label: "How It Works", icon: Layers },
+  { id: "templates", label: "Templates", icon: FileText },
+  { id: "quickstart", label: "Quick Start", icon: Zap },
   { id: "authentication", label: "Authentication", icon: Key },
-  { id: "concepts", label: "Core Concepts", icon: Layers },
   { id: "endpoints", label: "Endpoints", icon: Terminal },
   { id: "webhooks", label: "Webhooks", icon: Webhook },
-  { id: "errors", label: "Errors & Rate Limits", icon: AlertTriangle },
+  { id: "errors", label: "Error Handling", icon: AlertTriangle },
   { id: "examples", label: "Examples", icon: Code2 },
   { id: "changelog", label: "Changelog", icon: FileText },
 ];
@@ -231,14 +232,21 @@ export default function PublicDevelopersDocs() {
 
   return (
     <div className="flex flex-col">
-      <div className="container py-8 max-w-7xl mx-auto">
-        {/* Page header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">API Documentation</h1>
-          <p className="text-muted-foreground">
-            Integrate DocServant Platform with your systems using our REST API and webhooks.
+      {/* Hero header with green gradient - matching marketing pages */}
+      <section className="relative overflow-hidden py-16 md:py-20">
+        {/* Subtle green gradient background */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(168_76%_32%/0.08),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,hsl(168_76%_32%/0.05),transparent_50%)]" />
+        
+        <div className="container relative z-10 max-w-4xl mx-auto text-center">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">API Documentation</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Integrate DocServant into your systems to extract structured data from documents.
           </p>
         </div>
+      </section>
+
+      <div className="container py-8 max-w-7xl mx-auto">
 
           {/* Mobile nav toggle */}
           <div className="lg:hidden my-6">
@@ -313,67 +321,98 @@ export default function PublicDevelopersDocs() {
                 </Callout>
               </div>
 
-              {/* Quickstart */}
-              <SectionHeading id="quickstart">
-                <Zap className="w-5 h-5 text-primary" />
-                Quickstart
+              {/* How the API Works - Mental Model */}
+              <SectionHeading id="how-it-works">
+                <Layers className="w-5 h-5 text-primary" />
+                How the DocServant API works
               </SectionHeading>
               
               <P>
-                Get started with the DocServant API in five simple steps. You'll be extracting document data programmatically in minutes.
+                DocServant uses a <strong>template-first approach</strong> to document extraction:
+              </P>
+
+              <ul className="list-disc list-inside text-muted-foreground mb-4 space-y-2">
+                <li>Templates define the structure of extracted data</li>
+                <li>Templates are created once in DocServant Studio</li>
+                <li>The API processes documents against a template</li>
+                <li>All processing is asynchronous</li>
+                <li>Results are delivered via webhooks</li>
+              </ul>
+
+              <Callout type="info">
+                Think of templates as a <strong>contract</strong> between your documents and the structured output you receive. Define the schema once, then process any number of documents against it.
+              </Callout>
+
+              <Divider />
+
+              {/* Templates - Dedicated Section */}
+              <SectionHeading id="templates">
+                <FileText className="w-5 h-5 text-primary" />
+                Templates
+              </SectionHeading>
+
+              <P>
+                Templates are the foundation of DocServant's extraction model. Every API request references a template ID.
+              </P>
+
+              <SubHeading>What templates define</SubHeading>
+              <ul className="list-disc list-inside text-muted-foreground mb-4 space-y-1">
+                <li>The fields to extract from documents</li>
+                <li>Data types and formats for each field</li>
+                <li>How fields map to spreadsheet columns</li>
+                <li>Validation rules and transformations</li>
+              </ul>
+
+              <SubHeading>Creating templates</SubHeading>
+              <P>
+                Templates are created and managed in DocServant Studio. Upload a sample document, define your columns, and the template is ready to use via the API.
+              </P>
+
+              <Callout type="success">
+                Templates are <strong>reusable</strong>. Create once, process unlimited documents. Templates cannot be created via the API — they require the Studio interface.
+              </Callout>
+
+              <Divider />
+
+              {/* Quick Start - Conceptual */}
+              <SectionHeading id="quickstart">
+                <Zap className="w-5 h-5 text-primary" />
+                Quick Start
+              </SectionHeading>
+              
+              <P>
+                The typical workflow for integrating DocServant:
               </P>
 
               <div className="space-y-4 mb-6">
                 <div className="flex gap-4">
                   <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium shrink-0">1</div>
                   <div>
-                    <p className="font-medium text-foreground">Enable API access</p>
-                    <p className="text-sm text-muted-foreground">Sign in and go to Developers to toggle on API Access.</p>
+                    <p className="font-medium text-foreground">Create a template in DocServant Studio</p>
+                    <p className="text-sm text-muted-foreground">Upload a sample document, define columns, and configure extraction settings.</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
                   <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium shrink-0">2</div>
                   <div>
-                    <p className="font-medium text-foreground">Create an API key</p>
-                    <p className="text-sm text-muted-foreground">Generate a new API key and store it securely. You won't be able to see it again.</p>
+                    <p className="font-medium text-foreground">Generate an API key</p>
+                    <p className="text-sm text-muted-foreground">Go to the Developers section in your account to create and manage API keys.</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
                   <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium shrink-0">3</div>
                   <div>
-                    <p className="font-medium text-foreground">Submit a job</p>
-                    <p className="text-sm text-muted-foreground">POST a document to <InlineCode>/jobs</InlineCode> with your template ID.</p>
+                    <p className="font-medium text-foreground">Send documents to the API with a template ID</p>
+                    <p className="text-sm text-muted-foreground">POST documents to <InlineCode>/jobs</InlineCode> referencing your template.</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
                   <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium shrink-0">4</div>
                   <div>
-                    <p className="font-medium text-foreground">Check status</p>
-                    <p className="text-sm text-muted-foreground">GET <InlineCode>/jobs/{'{jobId}'}</InlineCode> to check processing status.</p>
+                    <p className="font-medium text-foreground">Receive structured results via webhook</p>
+                    <p className="text-sm text-muted-foreground">Configure a webhook endpoint to receive job completion notifications with output URLs.</p>
                   </div>
                 </div>
-                <div className="flex gap-4">
-                  <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium shrink-0">5</div>
-                  <div>
-                    <p className="font-medium text-foreground">Receive results</p>
-                    <p className="text-sm text-muted-foreground">Fetch outputs when complete, or configure a webhook to receive them automatically.</p>
-                  </div>
-                </div>
-              </div>
-
-              <SubHeading>Typical Flow</SubHeading>
-              <div className="flex flex-wrap items-center gap-2 text-sm mb-6">
-                <span className="px-3 py-1.5 bg-muted rounded-md font-medium">Submit</span>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                <span className="px-3 py-1.5 bg-muted rounded-md font-medium">jobId</span>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                <span className="px-3 py-1.5 bg-amber-500/10 text-amber-700 rounded-md font-medium">processing</span>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                <span className="px-3 py-1.5 bg-green-500/10 text-green-700 rounded-md font-medium">completed</span>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-md font-medium">fetch outputs</span>
-                <span className="text-muted-foreground mx-1">or</span>
-                <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-md font-medium">webhook callback</span>
               </div>
 
               <Divider />
@@ -401,17 +440,6 @@ export default function PublicDevelopersDocs() {
 
               <Divider />
 
-              {/* Core Concepts */}
-              <SectionHeading id="concepts">
-                <Layers className="w-5 h-5 text-primary" />
-                Core Concepts
-              </SectionHeading>
-
-              <SubHeading>Templates</SubHeading>
-              <P>
-                Templates define the structure of your data extraction. Each template specifies which fields to extract, their data types, and how they map to spreadsheet columns. Create templates in DocServant, then reference them by ID when submitting jobs via the API.
-              </P>
-
               <SubHeading>Jobs</SubHeading>
               <P>
                 Jobs represent document processing requests. When you submit a document, a job is created and enters the processing queue. Jobs progress through these statuses:
@@ -433,11 +461,6 @@ export default function PublicDevelopersDocs() {
               </ul>
               <P>
                 Both outputs are accessible via signed URLs that expire after 24 hours.
-              </P>
-
-              <SubHeading>Template API Settings</SubHeading>
-              <P>
-                Each template can have its own API access settings (inherit from account, enabled, or disabled). This allows you to control which templates are accessible via the API, useful for restricting access to sensitive extraction workflows.
               </P>
 
               <Divider />
@@ -515,8 +538,18 @@ export default function PublicDevelopersDocs() {
                 Webhooks
               </SectionHeading>
 
+              <SubHeading>Why webhooks?</SubHeading>
               <P>
-                Webhooks eliminate the need for polling by notifying your server when jobs complete. Configure your webhook endpoint in the Developers section after signing in.
+                Document processing is asynchronous — extraction may take seconds to minutes depending on document complexity. Rather than polling the API, webhooks notify your server when jobs complete.
+              </P>
+              <ul className="list-disc list-inside text-muted-foreground mb-4 space-y-1">
+                <li>Results may take time to generate</li>
+                <li>Webhooks are the primary delivery mechanism</li>
+                <li>Webhooks are sent for both success and failure states</li>
+              </ul>
+
+              <P>
+                Configure your webhook endpoint in the Developers section after signing in.
               </P>
 
               <SubHeading>Events</SubHeading>
@@ -567,11 +600,15 @@ X-DocServant-Timestamp: 1705312245`}</CodeBlock>
 
               <Divider />
 
-              {/* Errors & Rate Limits */}
+              {/* Error Handling */}
               <SectionHeading id="errors">
                 <AlertTriangle className="w-5 h-5 text-primary" />
-                Errors & Rate Limits
+                Error Handling
               </SectionHeading>
+
+              <P>
+                Jobs may fail due to unreadable documents, invalid templates, or processing errors. Failed jobs return a webhook event with error details. Clients should handle retries where appropriate.
+              </P>
 
               <SubHeading>HTTP Status Codes</SubHeading>
               <div className="border border-border rounded-lg overflow-hidden mb-6">

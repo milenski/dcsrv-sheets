@@ -15,9 +15,13 @@ import {
 export default function Developers() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="py-20 lg:py-28">
-        <div className="container max-w-4xl text-center">
+      {/* Hero Section with green gradient */}
+      <section className="relative overflow-hidden py-20 lg:py-28">
+        {/* Subtle green gradient background - matching marketing pages */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(168_76%_32%/0.08),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,hsl(168_76%_32%/0.05),transparent_50%)]" />
+        
+        <div className="container relative z-10 max-w-4xl text-center">
           <p className="text-sm font-medium text-primary mb-4 tracking-wide uppercase">
             Developers
           </p>
