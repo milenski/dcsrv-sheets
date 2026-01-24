@@ -186,12 +186,8 @@ function HomeNavbar() {
 // ============================================================================
 function HeroSection() {
   return (
-    <section className="relative overflow-hidden py-20 md:py-28">
-      {/* Subtle green gradient background */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(168_76%_32%/0.08),transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,hsl(168_76%_32%/0.05),transparent_50%)]" />
-      
-      <div className="container relative z-10">
+    <section className="py-20 md:py-28 bg-gradient-subtle">
+      <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
