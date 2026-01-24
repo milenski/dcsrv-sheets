@@ -20,6 +20,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
 import PublicDevelopersDocs from "./pages/DevelopersDocs";
+import PublicDevelopers from "./pages/Developers";
 
 // App pages
 import Dashboard from "./pages/app/Dashboard";
@@ -59,7 +60,10 @@ const App = () => (
             <Route element={<Layout><Terms /></Layout>} path="/terms" />
             <Route element={<Layout><Security /></Layout>} path="/security" />
             
-            {/* Public API Documentation - wrapped with Layout for unified header/footer */}
+            {/* Public Developers landing page */}
+            <Route element={<Layout><PublicDevelopers /></Layout>} path="/developers" />
+            
+            {/* Public API Documentation */}
             <Route element={<Layout><PublicDevelopersDocs /></Layout>} path="/developers/docs" />
             
             {/* Auth pages - no header/footer, standalone */}

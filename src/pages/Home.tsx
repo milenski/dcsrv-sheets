@@ -81,7 +81,7 @@ function HomeNavbar() {
             Examples
           </Link>
           <Link 
-            to="/developers/docs" 
+            to="/developers" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Developers
@@ -140,7 +140,7 @@ function HomeNavbar() {
               Examples
             </Link>
             <Link 
-              to="/developers/docs" 
+              to="/developers" 
               className="text-sm font-medium text-foreground" 
               onClick={() => setMobileMenuOpen(false)}
             >
