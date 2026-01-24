@@ -43,7 +43,7 @@ export default function Terms() {
                   Acceptance of Terms
                 </h2>
                 <p className="leading-relaxed">
-                  By accessing or using DocServant for Spreadsheets ("the Service"), you agree
+                  By accessing or using DocServant Platform ("the Service"), you agree
                   to be bound by these Terms of Service. If you do not agree to these terms,
                   please do not use the Service.
                 </p>

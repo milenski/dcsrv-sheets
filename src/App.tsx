@@ -19,7 +19,7 @@ import Security from "./pages/Security";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
-// NewHomeLanding removed - content migrated to Home.tsx
+import PublicDevelopersDocs from "./pages/DevelopersDocs";
 
 // App pages
 import Dashboard from "./pages/app/Dashboard";
@@ -58,6 +58,9 @@ const App = () => (
             <Route element={<Layout><Privacy /></Layout>} path="/privacy" />
             <Route element={<Layout><Terms /></Layout>} path="/terms" />
             <Route element={<Layout><Security /></Layout>} path="/security" />
+            
+            {/* Public API Documentation - no auth required */}
+            <Route element={<PublicDevelopersDocs />} path="/developers/docs" />
             
             {/* Auth pages - no header/footer, standalone */}
             <Route element={<Login />} path="/login" />

@@ -221,7 +221,7 @@ export default function Developers() {
                 </code>
               </div>
               <Button variant="outline" size="sm" asChild>
-                <Link to="/app/developers/docs" className="gap-2">
+                <Link to="/developers/docs" className="gap-2">
                   <ExternalLink className="w-4 h-4" />
                   View API Documentation
                 </Link>

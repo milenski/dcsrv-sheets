@@ -18,7 +18,7 @@ export function Logo({ to = "/", collapsed = false, className }: LogoProps) {
         <span className="text-lg font-semibold text-foreground">
           DocServant
           <span className="ml-1 text-sm font-normal text-muted-foreground">
-            for Spreadsheets
+            Platform
           </span>
         </span>
       )}

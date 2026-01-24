@@ -41,7 +41,7 @@ export default function Privacy() {
               <div>
                 <h2 className="text-xl font-semibold text-foreground mb-3">Overview</h2>
                 <p className="leading-relaxed">
-                  DocServant for Spreadsheets ("DocServant", "we", "us", or "our") is committed
+                  DocServant Platform ("DocServant", "we", "us", or "our") is committed
                   to protecting your privacy. This Privacy Policy explains how we collect, use,
                   and safeguard your information when you use our document extraction service.
                 </p>
