@@ -8,6 +8,7 @@ const footerLinks = {
     { href: "/pricing", label: "Pricing" },
   ],
   developers: [
+    { href: "/developers", label: "Developers Overview" },
     { href: "/developers/docs", label: "API Documentation" },
   ],
   legal: [
