@@ -3,18 +3,17 @@ import { Logo } from "./Logo";
 
 const footerLinks = {
   product: [
-    { href: "/pricing", label: "Pricing" },
     { href: "/examples", label: "Examples" },
     { href: "/help", label: "Help Center" },
+    { href: "/pricing", label: "Pricing" },
+  ],
+  developers: [
+    { href: "/developers/docs", label: "API Documentation" },
   ],
   legal: [
-    { href: "/terms", label: "Terms of Service" },
-    { href: "/privacy", label: "Privacy Policy" },
+    { href: "/terms", label: "Terms" },
+    { href: "/privacy", label: "Privacy" },
     { href: "/security", label: "Security" },
-  ],
-  external: [
-    { href: "https://status.docservant.com", label: "Status", external: true },
-    { href: "https://docservant.com", label: "DocServant Family", external: true },
   ],
 };
 
@@ -27,20 +26,13 @@ export function SharedFooter({ compact = false }: SharedFooterProps) {
     return (
       <footer className="border-t border-border bg-muted/30 py-4">
         <div className="container flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-          <Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
           <Link to="/examples" className="hover:text-foreground transition-colors">Examples</Link>
+          <Link to="/developers/docs" className="hover:text-foreground transition-colors">API Docs</Link>
+          <Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
           <Link to="/help" className="hover:text-foreground transition-colors">Help</Link>
           <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
           <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
           <Link to="/security" className="hover:text-foreground transition-colors">Security</Link>
-          <a
-            href="https://docservant.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-foreground transition-colors"
-          >
-            DocServant Family
-          </a>
         </div>
       </footer>
     );
@@ -54,7 +46,7 @@ export function SharedFooter({ compact = false }: SharedFooterProps) {
           <div className="col-span-2 md:col-span-1">
             <Logo to="/" />
             <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
-              Turn documents into structured spreadsheets with AI-powered extraction.
+              Turn documents into structured data.
             </p>
           </div>
 
@@ -63,6 +55,23 @@ export function SharedFooter({ compact = false }: SharedFooterProps) {
             <h3 className="text-sm font-semibold text-foreground mb-4">Product</h3>
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    to={link.href}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Developers Links */}
+          <div>
+            <h3 className="text-sm font-semibold text-foreground mb-4">Developers</h3>
+            <ul className="space-y-3">
+              {footerLinks.developers.map((link) => (
                 <li key={link.href}>
                   <Link
                     to={link.href}
@@ -87,25 +96,6 @@ export function SharedFooter({ compact = false }: SharedFooterProps) {
                   >
                     {link.label}
                   </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* External Links */}
-          <div>
-            <h3 className="text-sm font-semibold text-foreground mb-4">More</h3>
-            <ul className="space-y-3">
-              {footerLinks.external.map((link) => (
-                <li key={link.href}>
-                  <a
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.label}
-                  </a>
                 </li>
               ))}
             </ul>

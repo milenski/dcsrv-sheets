@@ -183,39 +183,7 @@ function EndpointBlock({
     </div>
   );
 }
-
-// Local header for public docs page
-function DocsHeader() {
-  return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shrink-0">
-            <FileText className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="text-lg font-semibold text-foreground">
-            DocServant
-            <span className="ml-1 text-sm font-normal text-muted-foreground">
-              Platform
-            </span>
-          </span>
-        </Link>
-
-        <div className="flex items-center gap-4">
-          <Link 
-            to="/login" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Login
-          </Link>
-          <Button size="sm" asChild>
-            <Link to="/app">Try it free</Link>
-          </Button>
-        </div>
-      </div>
-    </header>
-  );
-}
+// Component now uses Layout from App.tsx for unified header/footer
 
 export default function PublicDevelopersDocs() {
   const [activeSection, setActiveSection] = useState("quickstart");
@@ -262,28 +230,15 @@ export default function PublicDevelopersDocs() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <DocsHeader />
-      
-      <main className="flex-1">
-        <div className="container py-8 max-w-7xl mx-auto">
-          {/* Page header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">API Documentation</h1>
-            <p className="text-muted-foreground">
-              Integrate DocServant Platform with your systems using our REST API and webhooks.
-            </p>
-          </div>
-
-          {/* Sign in callout */}
-          <Callout type="info">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-              <span>Sign in to generate API keys and configure webhooks.</span>
-              <Link to="/login" className="text-primary font-medium hover:underline inline-flex items-center gap-1">
-                Sign in <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
-          </Callout>
+    <div className="flex flex-col">
+      <div className="container py-8 max-w-7xl mx-auto">
+        {/* Page header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground mb-2">API Documentation</h1>
+          <p className="text-muted-foreground">
+            Integrate DocServant Platform with your systems using our REST API and webhooks.
+          </p>
+        </div>
 
           {/* Mobile nav toggle */}
           <div className="lg:hidden my-6">
@@ -346,6 +301,18 @@ export default function PublicDevelopersDocs() {
 
             {/* Right content */}
             <div className="flex-1 min-w-0 max-w-3xl">
+              {/* Sign in callout - moved inside content column */}
+              <div className="mb-8">
+                <Callout type="info">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                    <span>Sign in to generate API keys and configure webhooks.</span>
+                    <Link to="/login" className="text-primary font-medium hover:underline inline-flex items-center gap-1">
+                      Sign in <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                </Callout>
+              </div>
+
               {/* Quickstart */}
               <SectionHeading id="quickstart">
                 <Zap className="w-5 h-5 text-primary" />
@@ -775,15 +742,6 @@ app.post('/webhooks/docservant', (req, res) => {
             </div>
           </div>
         </div>
-      </main>
-
-      {/* Simple footer */}
-      <footer className="border-t border-border bg-muted/30 py-8">
-        <div className="container text-center text-sm text-muted-foreground">
-          <p>DocServant — Turn documents into structured data.</p>
-          <p className="mt-2">© {new Date().getFullYear()} DocServant. All rights reserved.</p>
-        </div>
-      </footer>
-    </div>
+      </div>
   );
 }

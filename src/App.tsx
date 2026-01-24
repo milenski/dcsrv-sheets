@@ -59,8 +59,8 @@ const App = () => (
             <Route element={<Layout><Terms /></Layout>} path="/terms" />
             <Route element={<Layout><Security /></Layout>} path="/security" />
             
-            {/* Public API Documentation - no auth required */}
-            <Route element={<PublicDevelopersDocs />} path="/developers/docs" />
+            {/* Public API Documentation - wrapped with Layout for unified header/footer */}
+            <Route element={<Layout><PublicDevelopersDocs /></Layout>} path="/developers/docs" />
             
             {/* Auth pages - no header/footer, standalone */}
             <Route element={<Login />} path="/login" />

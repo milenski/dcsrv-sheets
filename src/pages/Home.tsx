@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { DocumentPreview } from "@/components/ui/DocumentPreview";
 import { DataTable } from "@/components/ui/DataTable";
+import { SharedFooter } from "@/components/shared/SharedFooter";
 import {
   FileText,
   Code2,
@@ -74,6 +75,12 @@ function HomeNavbar() {
         {/* Desktop Nav - Simplified top-level links */}
         <nav className="hidden md:flex items-center gap-6">
           <Link 
+            to="/examples" 
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Examples
+          </Link>
+          <Link 
             to="/developers/docs" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
@@ -84,6 +91,12 @@ function HomeNavbar() {
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Pricing
+          </Link>
+          <Link 
+            to="/help" 
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Help
           </Link>
         </nav>
 
@@ -120,6 +133,13 @@ function HomeNavbar() {
         >
           <div className="container py-4 flex flex-col gap-4">
             <Link 
+              to="/examples" 
+              className="text-sm font-medium text-foreground" 
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Examples
+            </Link>
+            <Link 
               to="/developers/docs" 
               className="text-sm font-medium text-foreground" 
               onClick={() => setMobileMenuOpen(false)}
@@ -132,6 +152,13 @@ function HomeNavbar() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Pricing
+            </Link>
+            <Link 
+              to="/help" 
+              className="text-sm font-medium text-foreground" 
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Help
             </Link>
             <div className="flex flex-col gap-2 pt-2 border-t border-border">
               <Link 
@@ -152,111 +179,7 @@ function HomeNavbar() {
   );
 }
 
-// ============================================================================
-// LOCAL FOOTER
-// ============================================================================
-function HomeFooter() {
-  return (
-    <footer className="border-t border-border bg-muted/30">
-      <div className="container py-12">
-        <div className="grid gap-8 md:grid-cols-4">
-          {/* Brand */}
-          <div className="md:col-span-1">
-            <Link to="/" className="flex items-center gap-2 mb-3">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary">
-                <FileText className="h-3.5 w-3.5 text-primary-foreground" />
-              </div>
-              <span className="font-semibold text-foreground">DocServant</span>
-            </Link>
-            <p className="text-sm text-muted-foreground">
-              Turn documents into structured data.
-            </p>
-          </div>
-
-          {/* Product */}
-          <div>
-            <h4 className="font-medium text-foreground mb-3 text-sm">Product</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link to="/examples" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Examples
-                </Link>
-              </li>
-              <li>
-                <Link to="/help" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Help Center
-                </Link>
-              </li>
-              <li>
-                <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Pricing
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Developers */}
-          <div>
-            <h4 className="font-medium text-foreground mb-3 text-sm">Developers</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link to="/developers/docs" className="text-muted-foreground hover:text-foreground transition-colors">
-                  API Documentation
-                </Link>
-              </li>
-              <li>
-                <Link to="/app/developers" className="text-muted-foreground hover:text-foreground transition-colors">
-                  API Keys & Webhooks
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Legal */}
-          <div>
-            <h4 className="font-medium text-foreground mb-3 text-sm">Legal</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Terms
-                </Link>
-              </li>
-              <li>
-                <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Privacy
-                </Link>
-              </li>
-              <li>
-                <Link to="/security" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Security
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="mt-8 pt-6 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-            <p className="text-sm text-muted-foreground">
-              DocServant — Turn documents into structured data.
-            </p>
-            <a 
-              href="https://docservant.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Powered by the same AI engine as DocServant for Salesforce
-            </a>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} DocServant. All rights reserved.
-          </p>
-        </div>
-      </div>
-    </footer>
-  );
-}
+// SharedFooter is imported from @/components/shared/SharedFooter
 
 // ============================================================================
 // HERO SECTION (with green gradient from old homepage)
@@ -857,7 +780,7 @@ export default function Home() {
         <TrustSection />
         <FinalCtaSection />
       </main>
-      <HomeFooter />
+      <SharedFooter />
     </div>
   );
 }
