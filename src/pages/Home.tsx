@@ -102,14 +102,11 @@ function HomeNavbar() {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-3">
-          <Link
-            to="/login" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Login
-          </Link>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/login">Login</Link>
+          </Button>
           <Button size="sm" asChild>
-            <Link to="/app">Try it free</Link>
+            <Link to="/signup">Try it free</Link>
           </Button>
         </div>
 
