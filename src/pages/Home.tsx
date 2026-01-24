@@ -73,8 +73,8 @@ function HomeNavbar() {
         <PlatformLogo />
 
         {/* Desktop Nav - Simplified top-level links */}
-        <nav className="hidden md:flex items-center gap-6">
-          <Link 
+        <nav className="hidden md:flex items-center gap-8">
+          <Link
             to="/examples" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
@@ -101,8 +101,8 @@ function HomeNavbar() {
         </nav>
 
         {/* Desktop CTAs */}
-        <div className="hidden md:flex items-center gap-4">
-          <Link 
+        <div className="hidden md:flex items-center gap-3">
+          <Link
             to="/login" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
