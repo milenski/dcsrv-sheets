@@ -19,7 +19,7 @@ import Security from "./pages/Security";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
-import NewHomeLanding from "./pages/NewHomeLanding";
+// NewHomeLanding removed - content migrated to Home.tsx
 
 // App pages
 import Dashboard from "./pages/app/Dashboard";
@@ -50,8 +50,8 @@ const App = () => (
           <UsageProvider>
             <RoleProvider>
               <Routes>
-            {/* Marketing site */}
-            <Route element={<Layout><Home /></Layout>} path="/" />
+            {/* Marketing site - Home now has its own nav/footer */}
+            <Route element={<Home />} path="/" />
             <Route element={<Layout><Pricing /></Layout>} path="/pricing" />
             <Route element={<Layout><Examples /></Layout>} path="/examples" />
             <Route element={<Layout><Help /></Layout>} path="/help" />
@@ -62,9 +62,6 @@ const App = () => (
             {/* Auth pages - no header/footer, standalone */}
             <Route element={<Login />} path="/login" />
             <Route element={<Signup />} path="/signup" />
-
-            {/* New landing page experiment - standalone with its own nav/footer */}
-            <Route element={<NewHomeLanding />} path="/new-home" />
 
             {/* App routes - protected by AppLayout */}
             <Route path="/app" element={<AppLayout />}>
