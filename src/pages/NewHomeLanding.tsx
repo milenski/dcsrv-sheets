@@ -143,12 +143,21 @@ function NewHomeNavbar() {
         </nav>
 
         {/* Desktop CTAs */}
-        <div className="hidden md:flex items-center gap-3">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/app/developers/docs">View API docs</Link>
-          </Button>
+        <div className="hidden md:flex items-center gap-4">
+          <Link 
+            to="/login" 
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Login
+          </Link>
+          <Link 
+            to="/app/developers/docs" 
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            API docs
+          </Link>
           <Button size="sm" asChild>
-            <Link to="/app">Try Studio</Link>
+            <Link to="/app">Try it free</Link>
           </Button>
         </div>
 
@@ -208,11 +217,22 @@ function NewHomeNavbar() {
               Pricing
             </Link>
             <div className="flex flex-col gap-2 pt-2 border-t border-border">
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/app/developers/docs">View API docs</Link>
-              </Button>
+              <Link 
+                to="/login" 
+                className="text-sm font-medium text-foreground"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Login
+              </Link>
+              <Link 
+                to="/app/developers/docs" 
+                className="text-sm font-medium text-muted-foreground"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                API docs
+              </Link>
               <Button size="sm" asChild>
-                <Link to="/app">Try Studio</Link>
+                <Link to="/app">Try it free</Link>
               </Button>
             </div>
           </div>
@@ -338,13 +358,16 @@ function HeroSection() {
             Extract reliable, structured outputs from invoices, statements, forms, and more — using our UI or API.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button size="lg" asChild>
-              <Link to="/app">Try Studio</Link>
+              <Link to="/app">Try it free</Link>
             </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link to="/app/developers/docs">View API docs</Link>
-            </Button>
+            <Link 
+              to="/app/developers/docs" 
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline"
+            >
+              View API docs →
+            </Link>
           </div>
         </motion.div>
       </div>
@@ -367,10 +390,10 @@ function TwoWaysSection() {
           className="text-center mb-12"
         >
           <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-            Two ways to extract
+            Two ways to use DocServant
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Choose the interface that fits your workflow.
+            Use the interface that fits your workflow — or both.
           </p>
         </motion.div>
 
@@ -410,7 +433,7 @@ function TwoWaysSection() {
               </li>
             </ul>
             <Button asChild className="w-full">
-              <Link to="/app">Try Studio</Link>
+              <Link to="/app">Try it free</Link>
             </Button>
           </motion.div>
 
@@ -449,9 +472,15 @@ function TwoWaysSection() {
                 Webhooks
               </li>
             </ul>
-            <Button variant="outline" asChild className="w-full">
-              <Link to="/app/developers/docs">View API docs</Link>
+            <Button asChild className="w-full">
+              <Link to="/app">Try it free</Link>
             </Button>
+            <p className="text-xs text-muted-foreground text-center mt-3">
+              Sign in to generate API keys and configure webhooks.{" "}
+              <Link to="/app/developers/docs" className="underline hover:text-foreground">
+                Read docs →
+              </Link>
+            </p>
           </motion.div>
         </div>
       </div>
