@@ -233,12 +233,8 @@ export default function PublicDevelopersDocs() {
   return (
     <div className="flex flex-col">
       {/* Hero header with green gradient - matching marketing pages */}
-      <section className="relative overflow-hidden py-16 md:py-20">
-        {/* Subtle green gradient background */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(168_76%_32%/0.08),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,hsl(168_76%_32%/0.05),transparent_50%)]" />
-        
-        <div className="container relative z-10 max-w-4xl mx-auto text-center">
+      <section className="py-16 md:py-20 bg-gradient-subtle">
+        <div className="container max-w-4xl mx-auto text-center">
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">API Documentation</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Integrate DocServant into your systems to extract structured data from documents.
