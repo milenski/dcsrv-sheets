@@ -4,7 +4,8 @@ import {
   ArrowLeft, 
   Check,
   ChevronRight,
-  MessageSquare
+  MessageSquare,
+  Link2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Table,
   TableBody,
@@ -21,6 +23,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 // Mock data
@@ -29,6 +38,7 @@ const mockSheet = {
   name: "Invoices",
   enabled: true,
   prompt: "Focus on header-level invoice information. Be precise with dates and currency values.",
+  relationship: { type: "standalone" as "standalone" | "child", parentSheetId: undefined as string | undefined },
   columns: [
     { id: "col1", name: "Invoice Number", enabled: true, prompt: "" },
     { id: "col2", name: "Date", enabled: true, prompt: "Extract the invoice date in YYYY-MM-DD format." },
@@ -39,6 +49,12 @@ const mockSheet = {
   ]
 };
 
+// Mock all sheets in the template for relationship config
+const mockAllSheets = [
+  { id: "sheet1", name: "Invoices" },
+  { id: "sheet2", name: "Line Items" },
+];
+
 const mockTemplatePrompt = "You are extracting invoice data. Be precise with numbers and dates. Always verify totals match line items.";
 
 export default function SheetDetail() {
@@ -47,9 +63,12 @@ export default function SheetDetail() {
   const [sheet, setSheet] = useState(mockSheet);
   const [sheetPrompt, setSheetPrompt] = useState(sheet.prompt);
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
+  const [relationship, setRelationship] = useState<"standalone" | "child">(sheet.relationship.type);
+  const [parentSheetId, setParentSheetId] = useState<string | undefined>(sheet.relationship.parentSheetId);
 
   const enabledColumns = sheet.columns.filter(c => c.enabled);
   const columnsWithPrompts = sheet.columns.filter(c => c.prompt).length;
+  const availableParents = mockAllSheets.filter(s => s.id !== sheetId);
 
   const toggleColumn = (columnId: string) => {
     setSheet(prev => ({
@@ -96,6 +115,13 @@ export default function SheetDetail() {
     setSelectedColumns([]);
   };
 
+  const handleRelationshipChange = (type: "standalone" | "child") => {
+    setRelationship(type);
+    if (type === "standalone") {
+      setParentSheetId(undefined);
+    }
+  };
+
   return (
     <div className="min-h-full bg-muted/30">
       {/* Header */}
@@ -139,6 +165,89 @@ export default function SheetDetail() {
                 onCheckedChange={(checked) => setSheet(prev => ({ ...prev, enabled: checked }))}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Relationship Configuration */}
+        <Card className="shadow-card">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Link2 className="w-5 h-5 text-muted-foreground" />
+              <CardTitle className="text-base">Relationship</CardTitle>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Define how this sheet relates to other sheets in the template
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <RadioGroup 
+              value={relationship} 
+              onValueChange={(v) => handleRelationshipChange(v as "standalone" | "child")}
+            >
+              <div className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+                <RadioGroupItem value="standalone" id="rel-standalone" className="mt-1" />
+                <div>
+                  <Label htmlFor="rel-standalone" className="font-medium cursor-pointer">
+                    Standalone sheet
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    This sheet has no relationship to other sheets
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+                <RadioGroupItem 
+                  value="child" 
+                  id="rel-child" 
+                  className="mt-1"
+                  disabled={availableParents.length === 0}
+                />
+                <div>
+                  <Label 
+                    htmlFor="rel-child" 
+                    className={cn(
+                      "font-medium cursor-pointer",
+                      availableParents.length === 0 && "text-muted-foreground"
+                    )}
+                  >
+                    Child sheet linked to another sheet
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    This sheet contains related records (e.g., line items for invoices)
+                  </p>
+                </div>
+              </div>
+            </RadioGroup>
+
+            {relationship === "child" && (
+              <div className="space-y-3 pt-2 pl-6 border-l-2 border-primary/20 ml-3">
+                <div className="space-y-2">
+                  <Label>Parent (master) sheet</Label>
+                  <Select value={parentSheetId} onValueChange={setParentSheetId}>
+                    <SelectTrigger className="w-full max-w-xs">
+                      <SelectValue placeholder="Select parent sheet" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableParents.map((sheet) => (
+                        <SelectItem key={sheet.id} value={sheet.id}>
+                          {sheet.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Label className="text-muted-foreground">Relationship type:</Label>
+                  <Badge variant="secondary">One-to-many</Badge>
+                </div>
+              </div>
+            )}
+
+            <Button size="sm" className="mt-2">
+              <Check className="w-4 h-4 mr-2" />
+              Save Relationship
+            </Button>
           </CardContent>
         </Card>
 

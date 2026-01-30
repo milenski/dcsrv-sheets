@@ -13,7 +13,9 @@ import {
   ChevronRight,
   MessageSquare,
   Code2,
-  ExternalLink
+  ExternalLink,
+  Copy,
+  Database
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,13 +57,17 @@ import { useUsage } from "@/hooks/useUsage";
 import { planHasApi } from "@/lib/plans";
 import { useRole, canManageTemplates } from "@/hooks/useRole";
 import { PermissionRequired } from "@/components/app/PermissionRequired";
+import { ChangeOutputModeDialog } from "@/components/app/templates/ChangeOutputModeDialog";
+import { DuplicateTemplateDialog } from "@/components/app/templates/DuplicateTemplateDialog";
+import { TemplateDataTab } from "@/components/app/templates/TemplateDataTab";
+import { toast } from "sonner";
 
 // Mock template data
 const mockTemplate = {
   id: "1",
   name: "Invoice Extractor",
   description: "Extract invoice data including amounts, dates, and vendor info",
-  outputMode: "new" as const,
+  outputMode: "new" as "new" | "append",
   storeData: true,
   apiAccess: "inherit" as "inherit" | "enabled" | "disabled",
   prompt: "You are extracting invoice data. Be precise with numbers and dates. Always verify totals match line items.",
@@ -71,6 +77,7 @@ const mockTemplate = {
       name: "Invoices", 
       enabled: true,
       prompt: "Focus on header-level invoice information.",
+      relationship: { type: "standalone" as const },
       columns: [
         { id: "col1", name: "Invoice Number", enabled: true, prompt: "" },
         { id: "col2", name: "Date", enabled: true, prompt: "Extract the invoice date in YYYY-MM-DD format." },
@@ -85,6 +92,7 @@ const mockTemplate = {
       name: "Line Items", 
       enabled: true,
       prompt: "",
+      relationship: { type: "child" as const, parentSheetId: "sheet1" },
       columns: [
         { id: "col7", name: "Invoice Number", enabled: true, prompt: "" },
         { id: "col8", name: "Description", enabled: true, prompt: "" },
@@ -113,6 +121,8 @@ export default function TemplateDetail() {
   const [editedName, setEditedName] = useState(template.name);
   const [templatePrompt, setTemplatePrompt] = useState(template.prompt);
   const [templateApiAccess, setTemplateApiAccess] = useState<"inherit" | "enabled" | "disabled">(template.apiAccess);
+  const [showOutputModeDialog, setShowOutputModeDialog] = useState(false);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
 
   // Permission guard for Members
   if (!canManage) {
@@ -150,6 +160,23 @@ export default function TemplateDetail() {
         s.id === sheetId ? { ...s, enabled: !s.enabled } : s
       )
     }));
+  };
+
+  const handleOutputModeChange = (newMode: "new" | "append") => {
+    setTemplate(prev => ({ ...prev, outputMode: newMode }));
+    toast.success("Output mode updated successfully");
+  };
+
+  const handleDuplicate = (options: { name: string; duplicateSheets: boolean; duplicatePrompts: boolean }) => {
+    // TODO: Actually create the duplicate
+    toast.success(`Template "${options.name}" created as draft`);
+    // Navigate to the new template (mock)
+    navigate("/app/templates/2");
+  };
+
+  const getParentSheetName = (parentId?: string) => {
+    if (!parentId) return null;
+    return template.sheets.find(s => s.id === parentId)?.name;
   };
 
   return (
@@ -209,7 +236,10 @@ export default function TemplateDetail() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem>Duplicate template</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowDuplicateDialog(true)}>
+                    <Copy className="w-4 h-4 mr-2" />
+                    Duplicate template
+                  </DropdownMenuItem>
                   <DropdownMenuItem>Export configuration</DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <AlertDialog>
@@ -265,6 +295,10 @@ export default function TemplateDetail() {
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="sheets">Sheets</TabsTrigger>
+            <TabsTrigger value="data" className="gap-1">
+              <Database className="w-4 h-4" />
+              Data
+            </TabsTrigger>
             <TabsTrigger value="prompts">Prompts</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
@@ -344,6 +378,9 @@ export default function TemplateDetail() {
                 <div className="space-y-3">
                   {enabledSheets.map((sheet) => {
                     const enabledCols = sheet.columns.filter(c => c.enabled).length;
+                    const parentName = sheet.relationship.type === "child" 
+                      ? getParentSheetName(sheet.relationship.parentSheetId)
+                      : null;
                     return (
                       <Link
                         key={sheet.id}
@@ -360,6 +397,11 @@ export default function TemplateDetail() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          {parentName && (
+                            <Badge variant="secondary" className="text-xs">
+                              Child of {parentName}
+                            </Badge>
+                          )}
                           {sheet.prompt && (
                             <Badge variant="secondary" className="text-xs">
                               Has prompt
@@ -390,6 +432,9 @@ export default function TemplateDetail() {
                 <div className="space-y-3">
                   {template.sheets.map((sheet) => {
                     const enabledCols = sheet.columns.filter(c => c.enabled).length;
+                    const parentName = sheet.relationship.type === "child" 
+                      ? getParentSheetName(sheet.relationship.parentSheetId)
+                      : null;
                     return (
                       <div
                         key={sheet.id}
@@ -404,12 +449,19 @@ export default function TemplateDetail() {
                             onCheckedChange={() => toggleSheet(sheet.id)}
                           />
                           <div>
-                            <p className={cn(
-                              "font-medium",
-                              !sheet.enabled && "text-muted-foreground"
-                            )}>
-                              {sheet.name}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className={cn(
+                                "font-medium",
+                                !sheet.enabled && "text-muted-foreground"
+                              )}>
+                                {sheet.name}
+                              </p>
+                              {parentName && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Child of {parentName}
+                                </Badge>
+                              )}
+                            </div>
                             <p className="text-sm text-muted-foreground">
                               {enabledCols} / {sheet.columns.length} columns
                             </p>
@@ -431,6 +483,14 @@ export default function TemplateDetail() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Data Tab */}
+          <TabsContent value="data" className="space-y-6">
+            <TemplateDataTab 
+              storeDataEnabled={template.storeData}
+              sheets={template.sheets}
+            />
           </TabsContent>
 
           {/* Prompts Tab */}
@@ -526,7 +586,9 @@ export default function TemplateDetail() {
                       }
                     </p>
                   </div>
-                  <Button variant="outline" size="sm">Change</Button>
+                  <Button variant="outline" size="sm" onClick={() => setShowOutputModeDialog(true)}>
+                    Change
+                  </Button>
                 </div>
 
                 <div className="flex items-center justify-between p-4 rounded-lg border">
@@ -589,7 +651,7 @@ export default function TemplateDetail() {
 
                     {!apiAllowedByPlan && (
                       <p className="text-sm text-muted-foreground">
-                        API access isn’t available on your current plan. Upgrade to enable API integrations for this template.
+                        API access isn't available on your current plan. Upgrade to enable API integrations for this template.
                       </p>
                     )}
                       
@@ -660,6 +722,22 @@ export default function TemplateDetail() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Dialogs */}
+      <ChangeOutputModeDialog
+        open={showOutputModeDialog}
+        onOpenChange={setShowOutputModeDialog}
+        currentMode={template.outputMode}
+        storeDataEnabled={template.storeData}
+        onConfirm={handleOutputModeChange}
+      />
+
+      <DuplicateTemplateDialog
+        open={showDuplicateDialog}
+        onOpenChange={setShowDuplicateDialog}
+        templateName={template.name}
+        onConfirm={handleDuplicate}
+      />
     </div>
   );
 }
