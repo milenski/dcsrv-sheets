@@ -7,7 +7,9 @@ import {
   Upload, 
   FileSpreadsheet,
   Loader2,
-  X
+  X,
+  Link2,
+  SkipForward
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,12 +19,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useRole, canManageTemplates } from "@/hooks/useRole";
 import { PermissionRequired } from "@/components/app/PermissionRequired";
@@ -31,7 +41,8 @@ const steps = [
   { id: 1, title: "Basics", description: "Name and settings" },
   { id: 2, title: "Upload Schema", description: "Upload Excel file" },
   { id: 3, title: "Select Sheets", description: "Choose sheets to use" },
-  { id: 4, title: "Select Columns", description: "Choose columns per sheet" },
+  { id: 4, title: "Relationships", description: "Optional", optional: true },
+  { id: 5, title: "Select Columns", description: "Choose columns per sheet" },
 ];
 
 // Mock detected schema after upload
@@ -72,6 +83,11 @@ const mockDetectedSchema = {
   ]
 };
 
+interface SheetRelationship {
+  type: "standalone" | "child";
+  parentSheetId?: string;
+}
+
 export default function TemplateNew() {
   const navigate = useNavigate();
   const { role } = useRole();
@@ -89,6 +105,7 @@ export default function TemplateNew() {
   const [storeData, setStoreData] = useState(true);
   const [selectedSheets, setSelectedSheets] = useState<string[]>([]);
   const [selectedColumns, setSelectedColumns] = useState<Record<string, string[]>>({});
+  const [sheetRelationships, setSheetRelationships] = useState<Record<string, SheetRelationship>>({});
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -103,10 +120,13 @@ export default function TemplateNew() {
     setDetectedSchema(mockDetectedSchema);
     setSelectedSheets(mockDetectedSchema.sheets.map(s => s.id));
     const initialColumns: Record<string, string[]> = {};
+    const initialRelationships: Record<string, SheetRelationship> = {};
     mockDetectedSchema.sheets.forEach(sheet => {
       initialColumns[sheet.id] = sheet.columns.map(c => c.id);
+      initialRelationships[sheet.id] = { type: "standalone" };
     });
     setSelectedColumns(initialColumns);
+    setSheetRelationships(initialRelationships);
     setIsUploading(false);
   };
 
@@ -115,6 +135,7 @@ export default function TemplateNew() {
     setDetectedSchema(null);
     setSelectedSheets([]);
     setSelectedColumns({});
+    setSheetRelationships({});
   };
 
   const toggleSheet = (sheetId: string) => {
@@ -142,12 +163,20 @@ export default function TemplateNew() {
     }));
   };
 
+  const updateSheetRelationship = (sheetId: string, relationship: SheetRelationship) => {
+    setSheetRelationships(prev => ({
+      ...prev,
+      [sheetId]: relationship
+    }));
+  };
+
   const canProceed = () => {
     switch (currentStep) {
       case 1: return templateName.trim().length > 0;
       case 2: return detectedSchema !== null;
       case 3: return selectedSheets.length > 0;
-      case 4: return selectedSheets.some(sheetId => 
+      case 4: return true; // Optional step, always can proceed
+      case 5: return selectedSheets.some(sheetId => 
         (selectedColumns[sheetId]?.length || 0) > 0
       );
       default: return false;
@@ -160,6 +189,7 @@ export default function TemplateNew() {
   };
 
   const totalSelectedColumns = Object.values(selectedColumns).flat().length;
+  const childSheets = Object.entries(sheetRelationships).filter(([_, rel]) => rel.type === "child").length;
 
   if (!canManage) {
     return (
@@ -220,17 +250,22 @@ export default function TemplateNew() {
                   </div>
                   <div className="hidden sm:block">
                     <p className={cn(
-                      "text-sm font-medium",
+                      "text-sm font-medium flex items-center gap-1.5",
                       currentStep >= step.id ? "text-foreground" : "text-muted-foreground"
                     )}>
                       {step.title}
+                      {step.optional && (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                          Optional
+                        </Badge>
+                      )}
                     </p>
                     <p className="text-xs text-muted-foreground">{step.description}</p>
                   </div>
                 </div>
                 {index < steps.length - 1 && (
                   <div className={cn(
-                    "w-12 lg:w-24 h-0.5 mx-4",
+                    "w-8 lg:w-16 h-0.5 mx-2 lg:mx-4",
                     currentStep > step.id ? "bg-primary" : "bg-muted"
                   )} />
                 )}
@@ -454,8 +489,138 @@ export default function TemplateNew() {
           </Card>
         )}
 
-        {/* Step 4: Select Columns */}
+        {/* Step 4: Sheet Relationships (Optional) */}
         {currentStep === 4 && detectedSchema && (
+          <Card className="shadow-card">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Link2 className="w-5 h-5 text-primary" />
+                <CardTitle>Sheet Relationships</CardTitle>
+                <Badge variant="secondary">Optional</Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Define relationships between sheets for complex document structures (e.g., invoices with line items).
+                This step can be skipped.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {detectedSchema.sheets
+                  .filter(sheet => selectedSheets.includes(sheet.id))
+                  .map((sheet) => {
+                    const relationship = sheetRelationships[sheet.id] || { type: "standalone" };
+                    const availableParents = detectedSchema.sheets.filter(
+                      s => selectedSheets.includes(s.id) && s.id !== sheet.id
+                    );
+                    const parentSheet = availableParents.find(s => s.id === relationship.parentSheetId);
+
+                    return (
+                      <div 
+                        key={sheet.id}
+                        className="p-4 rounded-lg border bg-background space-y-4"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <FileSpreadsheet className="w-5 h-5 text-muted-foreground" />
+                            <span className="font-medium">{sheet.name}</span>
+                          </div>
+                          {relationship.type === "child" && parentSheet && (
+                            <Badge variant="secondary" className="gap-1">
+                              <Link2 className="w-3 h-3" />
+                              Child of {parentSheet.name}
+                            </Badge>
+                          )}
+                        </div>
+
+                        <RadioGroup 
+                          value={relationship.type} 
+                          onValueChange={(v) => updateSheetRelationship(sheet.id, { 
+                            type: v as "standalone" | "child",
+                            parentSheetId: v === "child" ? relationship.parentSheetId : undefined
+                          })}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="standalone" id={`standalone-${sheet.id}`} />
+                            <Label htmlFor={`standalone-${sheet.id}`} className="cursor-pointer">
+                              Standalone sheet
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem 
+                              value="child" 
+                              id={`child-${sheet.id}`}
+                              disabled={availableParents.length === 0}
+                            />
+                            <Label 
+                              htmlFor={`child-${sheet.id}`} 
+                              className={cn(
+                                "cursor-pointer",
+                                availableParents.length === 0 && "text-muted-foreground"
+                              )}
+                            >
+                              Child sheet
+                            </Label>
+                          </div>
+                        </RadioGroup>
+
+                        {relationship.type === "child" && (
+                          <div className="pl-6 space-y-2">
+                            <Label>Parent (master) sheet</Label>
+                            <Select 
+                              value={relationship.parentSheetId} 
+                              onValueChange={(parentId) => updateSheetRelationship(sheet.id, {
+                                ...relationship,
+                                parentSheetId: parentId
+                              })}
+                            >
+                              <SelectTrigger className="w-full max-w-xs">
+                                <SelectValue placeholder="Select parent sheet" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableParents.map((parent) => (
+                                  <SelectItem key={parent.id} value={parent.id}>
+                                    {parent.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground">
+                              Relationship type: <Badge variant="outline" className="text-xs ml-1">One-to-many</Badge>
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+
+              <div className="mt-6 p-4 rounded-lg bg-muted/50 flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {childSheets > 0 ? (
+                    <>
+                      <span className="font-medium text-foreground">{childSheets}</span> child sheet{childSheets !== 1 ? "s" : ""} configured
+                    </>
+                  ) : (
+                    "No relationships configured (all standalone)"
+                  )}
+                </p>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setCurrentStep(5)}
+                  className="gap-1"
+                >
+                  <SkipForward className="w-4 h-4" />
+                  Skip this step
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 5: Select Columns */}
+        {currentStep === 5 && detectedSchema && (
           <Card className="shadow-card">
             <CardHeader>
               <CardTitle>Select Columns</CardTitle>
@@ -467,59 +632,72 @@ export default function TemplateNew() {
               <Accordion type="multiple" defaultValue={selectedSheets} className="space-y-3">
                 {detectedSchema.sheets
                   .filter(sheet => selectedSheets.includes(sheet.id))
-                  .map((sheet) => (
-                    <AccordionItem 
-                      key={sheet.id} 
-                      value={sheet.id}
-                      className="border rounded-lg px-4"
-                    >
-                      <AccordionTrigger className="hover:no-underline py-4">
-                        <div className="flex items-center gap-3">
-                          <FileSpreadsheet className="w-5 h-5 text-muted-foreground" />
-                          <span className="font-medium">{sheet.name}</span>
-                          <span className="text-sm text-muted-foreground">
-                            ({selectedColumns[sheet.id]?.length || 0} / {sheet.columns.length} selected)
-                          </span>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="pb-4">
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between pb-2 border-b">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => toggleAllColumns(sheet.id, sheet.columns)}
-                            >
-                              {sheet.columns.every(c => selectedColumns[sheet.id]?.includes(c.id))
-                                ? "Deselect all"
-                                : "Select all"
-                              }
-                            </Button>
+                  .map((sheet) => {
+                    const relationship = sheetRelationships[sheet.id];
+                    const parentSheet = relationship?.type === "child" && relationship.parentSheetId
+                      ? detectedSchema.sheets.find(s => s.id === relationship.parentSheetId)
+                      : null;
+
+                    return (
+                      <AccordionItem 
+                        key={sheet.id} 
+                        value={sheet.id}
+                        className="border rounded-lg px-4"
+                      >
+                        <AccordionTrigger className="hover:no-underline py-4">
+                          <div className="flex items-center gap-3">
+                            <FileSpreadsheet className="w-5 h-5 text-muted-foreground" />
+                            <span className="font-medium">{sheet.name}</span>
+                            <span className="text-sm text-muted-foreground">
+                              ({selectedColumns[sheet.id]?.length || 0} / {sheet.columns.length} selected)
+                            </span>
+                            {parentSheet && (
+                              <Badge variant="secondary" className="text-xs gap-1">
+                                <Link2 className="w-3 h-3" />
+                                Child of {parentSheet.name}
+                              </Badge>
+                            )}
                           </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            {sheet.columns.map((column) => (
-                              <div 
-                                key={column.id}
-                                className={cn(
-                                  "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
-                                  selectedColumns[sheet.id]?.includes(column.id)
-                                    ? "bg-accent"
-                                    : "hover:bg-muted/50"
-                                )}
-                                onClick={() => toggleColumn(sheet.id, column.id)}
+                        </AccordionTrigger>
+                        <AccordionContent className="pb-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between pb-2 border-b">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleAllColumns(sheet.id, sheet.columns)}
                               >
-                                <Checkbox 
-                                  checked={selectedColumns[sheet.id]?.includes(column.id)}
-                                  onCheckedChange={() => toggleColumn(sheet.id, column.id)}
-                                />
-                                <span className="text-sm">{column.name}</span>
-                              </div>
-                            ))}
+                                {sheet.columns.every(c => selectedColumns[sheet.id]?.includes(c.id))
+                                  ? "Deselect all"
+                                  : "Select all"
+                                }
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              {sheet.columns.map((column) => (
+                                <div 
+                                  key={column.id}
+                                  className={cn(
+                                    "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
+                                    selectedColumns[sheet.id]?.includes(column.id)
+                                      ? "bg-accent"
+                                      : "hover:bg-muted/50"
+                                  )}
+                                  onClick={() => toggleColumn(sheet.id, column.id)}
+                                >
+                                  <Checkbox 
+                                    checked={selectedColumns[sheet.id]?.includes(column.id)}
+                                    onCheckedChange={() => toggleColumn(sheet.id, column.id)}
+                                  />
+                                  <span className="text-sm">{column.name}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
               </Accordion>
 
               <div className="mt-6 p-4 rounded-lg bg-muted/50">
@@ -542,13 +720,22 @@ export default function TemplateNew() {
             Back
           </Button>
 
-          {currentStep < 4 ? (
+          {currentStep < 5 ? (
             <Button
               onClick={() => setCurrentStep(prev => prev + 1)}
               disabled={!canProceed()}
             >
-              Continue
-              <ArrowRight className="w-4 h-4 ml-2" />
+              {currentStep === 4 ? (
+                <>
+                  Continue
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </>
+              ) : (
+                <>
+                  Continue
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </>
+              )}
             </Button>
           ) : (
             <Button
