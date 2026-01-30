@@ -41,7 +41,7 @@ const steps = [
   { id: 1, title: "Basics", description: "Name and settings" },
   { id: 2, title: "Upload Schema", description: "Upload Excel file" },
   { id: 3, title: "Select Sheets", description: "Choose sheets to use" },
-  { id: 4, title: "Relationships", description: "Optional", optional: true },
+  { id: 4, title: "Sheet relationships", description: "Link related sheets" },
   { id: 5, title: "Select Columns", description: "Choose columns per sheet" },
 ];
 
@@ -250,15 +250,10 @@ export default function TemplateNew() {
                   </div>
                   <div className="hidden sm:block">
                     <p className={cn(
-                      "text-sm font-medium flex items-center gap-1.5",
+                      "text-sm font-medium",
                       currentStep >= step.id ? "text-foreground" : "text-muted-foreground"
                     )}>
                       {step.title}
-                      {step.optional && (
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                          Optional
-                        </Badge>
-                      )}
                     </p>
                     <p className="text-xs text-muted-foreground">{step.description}</p>
                   </div>
@@ -489,134 +484,184 @@ export default function TemplateNew() {
           </Card>
         )}
 
-        {/* Step 4: Sheet Relationships (Optional) */}
+        {/* Step 4: Sheet Relationships */}
         {currentStep === 4 && detectedSchema && (
-          <Card className="shadow-card">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Link2 className="w-5 h-5 text-primary" />
-                <CardTitle>Sheet Relationships</CardTitle>
-                <Badge variant="secondary">Optional</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Define relationships between sheets for complex document structures (e.g., invoices with line items).
-                This step can be skipped.
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {detectedSchema.sheets
-                  .filter(sheet => selectedSheets.includes(sheet.id))
-                  .map((sheet) => {
-                    const relationship = sheetRelationships[sheet.id] || { type: "standalone" };
-                    const availableParents = detectedSchema.sheets.filter(
-                      s => selectedSheets.includes(s.id) && s.id !== sheet.id
-                    );
-                    const parentSheet = availableParents.find(s => s.id === relationship.parentSheetId);
+          <div className="space-y-6">
+            {/* Main Card */}
+            <Card className="shadow-card">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Link2 className="w-5 h-5 text-muted-foreground" />
+                  <CardTitle>Sheet relationships</CardTitle>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Link related sheets for structured, multi-row data
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Intro explanation */}
+                <div className="text-sm text-muted-foreground space-y-2">
+                  <p>
+                    Use this step to define how data from different sheets is related.
+                  </p>
+                  <p>
+                    This is useful when one sheet contains main records, and another contains multiple related rows.
+                  </p>
+                </div>
 
-                    return (
-                      <div 
-                        key={sheet.id}
-                        className="p-4 rounded-lg border bg-background space-y-4"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <FileSpreadsheet className="w-5 h-5 text-muted-foreground" />
-                            <span className="font-medium">{sheet.name}</span>
+                {/* Example block */}
+                <div className="p-4 rounded-lg bg-muted/30 border border-muted space-y-3">
+                  <p className="text-sm font-medium text-foreground">Common example: invoices</p>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <div className="flex items-start gap-2">
+                      <span className="font-medium text-foreground">Invoices</span>
+                      <span>— main sheet</span>
+                    </div>
+                    <p className="pl-4 text-xs">One row per invoice (number, date, vendor, total)</p>
+                    <div className="flex items-start gap-2 mt-2">
+                      <span className="font-medium text-foreground">Line items</span>
+                      <span>— related sheet</span>
+                    </div>
+                    <p className="pl-4 text-xs">Multiple rows per invoice (description, quantity, price)</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground italic pt-1">
+                    Each invoice can have many line items.
+                  </p>
+                </div>
+
+                {/* Sheet relationship configuration */}
+                <div className="space-y-4">
+                  {detectedSchema.sheets
+                    .filter(sheet => selectedSheets.includes(sheet.id))
+                    .map((sheet) => {
+                      const relationship = sheetRelationships[sheet.id] || { type: "standalone" };
+                      const availableParents = detectedSchema.sheets.filter(
+                        s => selectedSheets.includes(s.id) && s.id !== sheet.id
+                      );
+                      const parentSheet = availableParents.find(s => s.id === relationship.parentSheetId);
+
+                      return (
+                        <div 
+                          key={sheet.id}
+                          className="p-4 rounded-lg border bg-background space-y-4"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <FileSpreadsheet className="w-5 h-5 text-muted-foreground" />
+                              <span className="font-medium">{sheet.name}</span>
+                            </div>
+                            {relationship.type === "child" && parentSheet && (
+                              <Badge variant="secondary" className="gap-1">
+                                <Link2 className="w-3 h-3" />
+                                Child of {parentSheet.name}
+                              </Badge>
+                            )}
                           </div>
-                          {relationship.type === "child" && parentSheet && (
-                            <Badge variant="secondary" className="gap-1">
-                              <Link2 className="w-3 h-3" />
-                              Child of {parentSheet.name}
-                            </Badge>
+
+                          <RadioGroup 
+                            value={relationship.type} 
+                            onValueChange={(v) => updateSheetRelationship(sheet.id, { 
+                              type: v as "standalone" | "child",
+                              parentSheetId: v === "child" ? relationship.parentSheetId : undefined
+                            })}
+                            className="flex gap-4"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="standalone" id={`standalone-${sheet.id}`} />
+                              <Label htmlFor={`standalone-${sheet.id}`} className="cursor-pointer">
+                                Standalone sheet
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem 
+                                value="child" 
+                                id={`child-${sheet.id}`}
+                                disabled={availableParents.length === 0}
+                              />
+                              <Label 
+                                htmlFor={`child-${sheet.id}`} 
+                                className={cn(
+                                  "cursor-pointer",
+                                  availableParents.length === 0 && "text-muted-foreground"
+                                )}
+                              >
+                                Child sheet (related)
+                              </Label>
+                            </div>
+                          </RadioGroup>
+
+                          {relationship.type === "child" && (
+                            <div className="pl-6 space-y-3 border-l-2 border-primary/20 ml-2">
+                              <div className="space-y-1.5">
+                                <Label>Parent (master) sheet</Label>
+                                <p className="text-xs text-muted-foreground">
+                                  Select the sheet that contains the main record (e.g. Invoices)
+                                </p>
+                                <Select 
+                                  value={relationship.parentSheetId} 
+                                  onValueChange={(parentId) => updateSheetRelationship(sheet.id, {
+                                    ...relationship,
+                                    parentSheetId: parentId
+                                  })}
+                                >
+                                  <SelectTrigger className="w-full max-w-xs">
+                                    <SelectValue placeholder="Select parent sheet" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {availableParents.map((parent) => (
+                                      <SelectItem key={parent.id} value={parent.id}>
+                                        {parent.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span>Relationship type:</span>
+                                <Badge variant="outline" className="text-xs">One-to-many</Badge>
+                              </div>
+                            </div>
                           )}
                         </div>
+                      );
+                    })}
+                </div>
 
-                        <RadioGroup 
-                          value={relationship.type} 
-                          onValueChange={(v) => updateSheetRelationship(sheet.id, { 
-                            type: v as "standalone" | "child",
-                            parentSheetId: v === "child" ? relationship.parentSheetId : undefined
-                          })}
-                          className="flex gap-4"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="standalone" id={`standalone-${sheet.id}`} />
-                            <Label htmlFor={`standalone-${sheet.id}`} className="cursor-pointer">
-                              Standalone sheet
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem 
-                              value="child" 
-                              id={`child-${sheet.id}`}
-                              disabled={availableParents.length === 0}
-                            />
-                            <Label 
-                              htmlFor={`child-${sheet.id}`} 
-                              className={cn(
-                                "cursor-pointer",
-                                availableParents.length === 0 && "text-muted-foreground"
-                              )}
-                            >
-                              Child sheet
-                            </Label>
-                          </div>
-                        </RadioGroup>
-
-                        {relationship.type === "child" && (
-                          <div className="pl-6 space-y-2">
-                            <Label>Parent (master) sheet</Label>
-                            <Select 
-                              value={relationship.parentSheetId} 
-                              onValueChange={(parentId) => updateSheetRelationship(sheet.id, {
-                                ...relationship,
-                                parentSheetId: parentId
-                              })}
-                            >
-                              <SelectTrigger className="w-full max-w-xs">
-                                <SelectValue placeholder="Select parent sheet" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {availableParents.map((parent) => (
-                                  <SelectItem key={parent.id} value={parent.id}>
-                                    {parent.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <p className="text-xs text-muted-foreground">
-                              Relationship type: <Badge variant="outline" className="text-xs ml-1">One-to-many</Badge>
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-              </div>
-
-              <div className="mt-6 p-4 rounded-lg bg-muted/50 flex items-center justify-between">
+                {/* Helper text */}
                 <p className="text-sm text-muted-foreground">
-                  {childSheets > 0 ? (
-                    <>
-                      <span className="font-medium text-foreground">{childSheets}</span> child sheet{childSheets !== 1 ? "s" : ""} configured
-                    </>
-                  ) : (
-                    "No relationships configured (all standalone)"
-                  )}
+                  During extraction, DocServant will group related rows under their parent record and return structured output.
                 </p>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setCurrentStep(5)}
-                  className="gap-1"
-                >
-                  <SkipForward className="w-4 h-4" />
-                  Skip this step
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+
+                {/* Summary bar */}
+                <div className="p-4 rounded-lg bg-muted/50 flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    {childSheets > 0 ? (
+                      <>
+                        <span className="font-medium text-foreground">{childSheets}</span> child sheet{childSheets !== 1 ? "s" : ""} configured
+                      </>
+                    ) : (
+                      "No relationships configured (all standalone)"
+                    )}
+                  </p>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setCurrentStep(5)}
+                    className="gap-1"
+                  >
+                    <SkipForward className="w-4 h-4" />
+                    Skip this step
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Skip reassurance */}
+            <div className="text-center text-sm text-muted-foreground space-y-1">
+              <p>Most templates don't need this step.</p>
+              <p>If your data fits in a single sheet, you can safely skip it.</p>
+            </div>
+          </div>
         )}
 
         {/* Step 5: Select Columns */}
