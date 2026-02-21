@@ -9,7 +9,11 @@ import {
   Loader2,
   X,
   Link2,
-  SkipForward
+  SkipForward,
+  PenLine,
+  Plus,
+  Trash2,
+  GripVertical
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,12 +41,23 @@ import { cn } from "@/lib/utils";
 import { useRole, canManageTemplates } from "@/hooks/useRole";
 import { PermissionRequired } from "@/components/app/PermissionRequired";
 
-const steps = [
+type CreationMode = "excel" | "manual" | null;
+
+const excelSteps = [
   { id: 1, title: "Basics", description: "Name and settings" },
-  { id: 2, title: "Upload Schema", description: "Upload Excel file" },
-  { id: 3, title: "Select Sheets", description: "Choose sheets to use" },
-  { id: 4, title: "Sheet relationships", description: "Link related sheets" },
-  { id: 5, title: "Select Columns", description: "Choose columns per sheet" },
+  { id: 2, title: "Creation mode", description: "Choose your path" },
+  { id: 3, title: "Upload Schema", description: "Upload Excel file" },
+  { id: 4, title: "Select Sheets", description: "Choose sheets to use" },
+  { id: 5, title: "Sheet relationships", description: "Link related sheets" },
+  { id: 6, title: "Select Columns", description: "Choose columns per sheet" },
+];
+
+const manualSteps = [
+  { id: 1, title: "Basics", description: "Name and settings" },
+  { id: 2, title: "Creation mode", description: "Choose your path" },
+  { id: 3, title: "Define Objects", description: "Create data objects" },
+  { id: 4, title: "Define Fields", description: "Add fields to objects" },
+  { id: 5, title: "Relationships", description: "Link related objects" },
 ];
 
 // Mock detected schema after upload
@@ -88,12 +103,44 @@ interface SheetRelationship {
   parentSheetId?: string;
 }
 
+interface ManualObject {
+  id: string;
+  name: string;
+  prompt: string;
+  fields: ManualField[];
+}
+
+interface ManualField {
+  id: string;
+  name: string;
+  type: string;
+  prompt: string;
+}
+
+interface ManualRelationship {
+  childObjectId: string;
+  parentObjectId: string;
+  linkField: string;
+}
+
+const fieldTypes = [
+  { value: "text", label: "Text" },
+  { value: "number", label: "Number" },
+  { value: "date", label: "Date" },
+  { value: "currency", label: "Currency" },
+  { value: "boolean", label: "Yes / No" },
+];
+
+let nextObjectId = 1;
+let nextFieldId = 1;
+
 export default function TemplateNew() {
   const navigate = useNavigate();
   const { role } = useRole();
   const canManage = canManageTemplates(role);
   
   const [currentStep, setCurrentStep] = useState(1);
+  const [creationMode, setCreationMode] = useState<CreationMode>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [detectedSchema, setDetectedSchema] = useState<typeof mockDetectedSchema | null>(null);
@@ -107,6 +154,13 @@ export default function TemplateNew() {
   const [selectedColumns, setSelectedColumns] = useState<Record<string, string[]>>({});
   const [sheetRelationships, setSheetRelationships] = useState<Record<string, SheetRelationship>>({});
 
+  // Manual mode state
+  const [manualObjects, setManualObjects] = useState<ManualObject[]>([]);
+  const [manualRelationships, setManualRelationships] = useState<ManualRelationship[]>([]);
+
+  const steps = creationMode === "manual" ? manualSteps : excelSteps;
+  const totalSteps = steps.length;
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -114,7 +168,6 @@ export default function TemplateNew() {
     setIsUploading(true);
     setUploadedFile(file);
 
-    // Simulate processing
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     setDetectedSchema(mockDetectedSchema);
@@ -170,21 +223,85 @@ export default function TemplateNew() {
     }));
   };
 
+  // Manual mode helpers
+  const addManualObject = () => {
+    const id = `obj_${nextObjectId++}`;
+    setManualObjects(prev => [...prev, { id, name: "", prompt: "", fields: [] }]);
+  };
+
+  const updateManualObject = (id: string, updates: Partial<ManualObject>) => {
+    setManualObjects(prev => prev.map(obj => obj.id === id ? { ...obj, ...updates } : obj));
+  };
+
+  const removeManualObject = (id: string) => {
+    setManualObjects(prev => prev.filter(obj => obj.id !== id));
+    setManualRelationships(prev => prev.filter(r => r.childObjectId !== id && r.parentObjectId !== id));
+  };
+
+  const addFieldToObject = (objectId: string) => {
+    const fieldId = `field_${nextFieldId++}`;
+    setManualObjects(prev => prev.map(obj => 
+      obj.id === objectId 
+        ? { ...obj, fields: [...obj.fields, { id: fieldId, name: "", type: "text", prompt: "" }] }
+        : obj
+    ));
+  };
+
+  const updateField = (objectId: string, fieldId: string, updates: Partial<ManualField>) => {
+    setManualObjects(prev => prev.map(obj => 
+      obj.id === objectId 
+        ? { ...obj, fields: obj.fields.map(f => f.id === fieldId ? { ...f, ...updates } : f) }
+        : obj
+    ));
+  };
+
+  const removeField = (objectId: string, fieldId: string) => {
+    setManualObjects(prev => prev.map(obj => 
+      obj.id === objectId 
+        ? { ...obj, fields: obj.fields.filter(f => f.id !== fieldId) }
+        : obj
+    ));
+  };
+
+  const addManualRelationship = () => {
+    setManualRelationships(prev => [...prev, { childObjectId: "", parentObjectId: "", linkField: "" }]);
+  };
+
+  const updateManualRelationship = (index: number, updates: Partial<ManualRelationship>) => {
+    setManualRelationships(prev => prev.map((r, i) => i === index ? { ...r, ...updates } : r));
+  };
+
+  const removeManualRelationship = (index: number) => {
+    setManualRelationships(prev => prev.filter((_, i) => i !== index));
+  };
+
   const canProceed = () => {
-    switch (currentStep) {
-      case 1: return templateName.trim().length > 0;
-      case 2: return detectedSchema !== null;
-      case 3: return selectedSheets.length > 0;
-      case 4: return true; // Optional step, always can proceed
-      case 5: return selectedSheets.some(sheetId => 
-        (selectedColumns[sheetId]?.length || 0) > 0
-      );
-      default: return false;
+    if (currentStep === 1) return templateName.trim().length > 0;
+    if (currentStep === 2) return creationMode !== null;
+
+    if (creationMode === "excel") {
+      switch (currentStep) {
+        case 3: return detectedSchema !== null;
+        case 4: return selectedSheets.length > 0;
+        case 5: return true;
+        case 6: return selectedSheets.some(sheetId => (selectedColumns[sheetId]?.length || 0) > 0);
+        default: return false;
+      }
     }
+
+    if (creationMode === "manual") {
+      switch (currentStep) {
+        case 3: return manualObjects.length > 0 && manualObjects.every(o => o.name.trim().length > 0);
+        case 4: return manualObjects.some(o => o.fields.length > 0 && o.fields.every(f => f.name.trim().length > 0));
+        case 5: return true;
+        default: return false;
+      }
+    }
+
+    return false;
   };
 
   const handleCreate = () => {
-    // TODO: Actually create the template
     navigate("/app/templates/1");
   };
 
@@ -341,8 +458,133 @@ export default function TemplateNew() {
           </Card>
         )}
 
-        {/* Step 2: Upload Schema */}
+        {/* Step 2: Creation Mode */}
         {currentStep === 2 && (
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <h2 className="text-xl font-semibold">Choose how to create your template</h2>
+              <p className="text-sm text-muted-foreground">
+                Both options produce the same result — pick what fits your workflow best.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Card A: Excel */}
+              <Card 
+                className={cn(
+                  "cursor-pointer transition-all hover:shadow-md relative",
+                  creationMode === "excel" 
+                    ? "border-primary ring-2 ring-primary/20" 
+                    : "hover:border-muted-foreground/30"
+                )}
+                onClick={() => setCreationMode("excel")}
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
+                      <FileSpreadsheet className="w-5 h-5 text-accent-foreground" />
+                    </div>
+                    <Badge variant="secondary" className="text-xs">Recommended</Badge>
+                  </div>
+                  <CardTitle className="text-lg mt-3">Upload Excel schema</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Start from a spreadsheet that defines your desired output structure.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                      <span>Define sheets, columns, and relationships visually</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                      <span>Fastest way to get a working template</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                      <span>Ideal for invoices, statements, reports, and tabular data</span>
+                    </li>
+                  </ul>
+                  <p className="text-xs text-muted-foreground border-t pt-3">
+                    You can still edit prompts, relationships, and fields manually after this step.
+                  </p>
+                  <Button 
+                    variant={creationMode === "excel" ? "default" : "outline"} 
+                    className="w-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCreationMode("excel");
+                    }}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Excel file
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Card B: Manual */}
+              <Card 
+                className={cn(
+                  "cursor-pointer transition-all hover:shadow-md",
+                  creationMode === "manual" 
+                    ? "border-primary ring-2 ring-primary/20" 
+                    : "hover:border-muted-foreground/30"
+                )}
+                onClick={() => setCreationMode("manual")}
+              >
+                <CardHeader className="pb-3">
+                  <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
+                    <PenLine className="w-5 h-5 text-accent-foreground" />
+                  </div>
+                  <CardTitle className="text-lg mt-3">Create template manually</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Define your structure from scratch using prompts and custom objects.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                      <span>Create objects one by one (similar to sheets)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                      <span>Define fields, prompts, and relationships explicitly</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                      <span>Best for APIs, dynamic schemas, and advanced use cases</span>
+                    </li>
+                  </ul>
+                  <p className="text-xs text-muted-foreground border-t pt-3">
+                    This works like DocServant for Salesforce — but fully customizable.
+                  </p>
+                  <Button 
+                    variant={creationMode === "manual" ? "default" : "outline"} 
+                    className="w-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCreationMode("manual");
+                    }}
+                  >
+                    <PenLine className="w-4 h-4 mr-2" />
+                    Create manually
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            <p className="text-center text-sm text-muted-foreground">
+              You're not locked in — you can add Excel schemas later or continue editing everything manually.
+            </p>
+          </div>
+        )}
+
+        {/* ==================== EXCEL PATH ==================== */}
+
+        {/* Excel Step 3: Upload Schema */}
+        {currentStep === 3 && creationMode === "excel" && (
           <Card className="shadow-card">
             <CardHeader>
               <CardTitle>Upload Excel Schema</CardTitle>
@@ -368,7 +610,6 @@ export default function TemplateNew() {
                 </label>
               ) : (
                 <div className="space-y-6">
-                  {/* Uploaded file display */}
                   <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
@@ -397,13 +638,9 @@ export default function TemplateNew() {
                         <Check className="w-4 h-4" />
                         <span>Detected {detectedSchema.sheets.length} sheets</span>
                       </div>
-
                       <div className="grid gap-3">
                         {detectedSchema.sheets.map((sheet) => (
-                          <div 
-                            key={sheet.id}
-                            className="p-4 rounded-lg border bg-background"
-                          >
+                          <div key={sheet.id} className="p-4 rounded-lg border bg-background">
                             <div className="flex items-center justify-between mb-2">
                               <span className="font-medium">{sheet.name}</span>
                               <span className="text-sm text-muted-foreground">
@@ -412,10 +649,7 @@ export default function TemplateNew() {
                             </div>
                             <div className="flex flex-wrap gap-2">
                               {sheet.columns.slice(0, 5).map((col) => (
-                                <span 
-                                  key={col.id}
-                                  className="px-2 py-1 text-xs rounded-md bg-muted text-muted-foreground"
-                                >
+                                <span key={col.id} className="px-2 py-1 text-xs rounded-md bg-muted text-muted-foreground">
                                   {col.name}
                                 </span>
                               ))}
@@ -436,8 +670,8 @@ export default function TemplateNew() {
           </Card>
         )}
 
-        {/* Step 3: Select Sheets */}
-        {currentStep === 3 && detectedSchema && (
+        {/* Excel Step 4: Select Sheets */}
+        {currentStep === 4 && creationMode === "excel" && detectedSchema && (
           <Card className="shadow-card">
             <CardHeader>
               <CardTitle>Select Sheets</CardTitle>
@@ -474,7 +708,6 @@ export default function TemplateNew() {
                   </div>
                 ))}
               </div>
-
               <div className="mt-6 p-4 rounded-lg bg-muted/50">
                 <p className="text-sm text-muted-foreground">
                   <span className="font-medium text-foreground">{selectedSheets.length}</span> of {detectedSchema.sheets.length} sheets selected
@@ -484,10 +717,9 @@ export default function TemplateNew() {
           </Card>
         )}
 
-        {/* Step 4: Sheet Relationships */}
-        {currentStep === 4 && detectedSchema && (
+        {/* Excel Step 5: Sheet Relationships */}
+        {currentStep === 5 && creationMode === "excel" && detectedSchema && (
           <div className="space-y-6">
-            {/* Main Card */}
             <Card className="shadow-card">
               <CardHeader>
                 <div className="flex items-center gap-2">
@@ -499,17 +731,11 @@ export default function TemplateNew() {
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Intro explanation */}
                 <div className="text-sm text-muted-foreground space-y-2">
-                  <p>
-                    Use this step to define how data from different sheets is related.
-                  </p>
-                  <p>
-                    This is useful when one sheet contains main records, and another contains multiple related rows.
-                  </p>
+                  <p>Use this step to define how data from different sheets is related.</p>
+                  <p>This is useful when one sheet contains main records, and another contains multiple related rows.</p>
                 </div>
 
-                {/* Example block */}
                 <div className="p-4 rounded-lg bg-muted/30 border border-muted space-y-3">
                   <p className="text-sm font-medium text-foreground">Common example: invoices</p>
                   <div className="space-y-2 text-sm text-muted-foreground">
@@ -529,7 +755,6 @@ export default function TemplateNew() {
                   </p>
                 </div>
 
-                {/* Sheet relationship configuration */}
                 <div className="space-y-4">
                   {detectedSchema.sheets
                     .filter(sheet => selectedSheets.includes(sheet.id))
@@ -541,10 +766,7 @@ export default function TemplateNew() {
                       const parentSheet = availableParents.find(s => s.id === relationship.parentSheetId);
 
                       return (
-                        <div 
-                          key={sheet.id}
-                          className="p-4 rounded-lg border bg-background space-y-4"
-                        >
+                        <div key={sheet.id} className="p-4 rounded-lg border bg-background space-y-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                               <FileSpreadsheet className="w-5 h-5 text-muted-foreground" />
@@ -627,12 +849,10 @@ export default function TemplateNew() {
                     })}
                 </div>
 
-                {/* Helper text */}
                 <p className="text-sm text-muted-foreground">
                   During extraction, DocServant will group related rows under their parent record and return structured output.
                 </p>
 
-                {/* Summary bar */}
                 <div className="p-4 rounded-lg bg-muted/50 flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
                     {childSheets > 0 ? (
@@ -646,7 +866,7 @@ export default function TemplateNew() {
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => setCurrentStep(5)}
+                    onClick={() => setCurrentStep(6)}
                     className="gap-1"
                   >
                     <SkipForward className="w-4 h-4" />
@@ -656,7 +876,6 @@ export default function TemplateNew() {
               </CardContent>
             </Card>
 
-            {/* Skip reassurance */}
             <div className="text-center text-sm text-muted-foreground space-y-1">
               <p>Most templates don't need this step.</p>
               <p>If your data fits in a single sheet, you can safely skip it.</p>
@@ -664,8 +883,8 @@ export default function TemplateNew() {
           </div>
         )}
 
-        {/* Step 5: Select Columns */}
-        {currentStep === 5 && detectedSchema && (
+        {/* Excel Step 6: Select Columns */}
+        {currentStep === 6 && creationMode === "excel" && detectedSchema && (
           <Card className="shadow-card">
             <CardHeader>
               <CardTitle>Select Columns</CardTitle>
@@ -754,6 +973,248 @@ export default function TemplateNew() {
           </Card>
         )}
 
+        {/* ==================== MANUAL PATH ==================== */}
+
+        {/* Manual Step 3: Define Objects */}
+        {currentStep === 3 && creationMode === "manual" && (
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle>Define Objects</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Objects represent groups of data you want to extract — similar to sheets in a spreadsheet.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {manualObjects.length === 0 && (
+                <div className="text-center py-8 text-sm text-muted-foreground space-y-3">
+                  <p>No objects defined yet.</p>
+                  <p className="text-xs">Start by adding your first object — for example, "Invoices" or "Contacts".</p>
+                </div>
+              )}
+
+              {manualObjects.map((obj) => (
+                <div key={obj.id} className="p-4 rounded-lg border bg-background space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <GripVertical className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-muted-foreground">Object</span>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeManualObject(obj.id)}>
+                      <Trash2 className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Object name *</Label>
+                    <Input 
+                      placeholder="e.g., Invoices, Line Items, Contacts" 
+                      value={obj.name} 
+                      onChange={(e) => updateManualObject(obj.id, { name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Extraction prompt (optional)</Label>
+                    <Textarea 
+                      placeholder="Describe what this object represents and how to extract it..."
+                      value={obj.prompt}
+                      onChange={(e) => updateManualObject(obj.id, { prompt: e.target.value })}
+                      rows={2}
+                    />
+                  </div>
+                </div>
+              ))}
+
+              <Button variant="outline" className="w-full" onClick={addManualObject}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add object
+              </Button>
+
+              <div className="p-4 rounded-lg bg-muted/50">
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{manualObjects.length}</span> object{manualObjects.length !== 1 ? "s" : ""} defined
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Manual Step 4: Define Fields */}
+        {currentStep === 4 && creationMode === "manual" && (
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle>Define Fields</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Add fields to each object — these become columns in your extracted output.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="multiple" defaultValue={manualObjects.map(o => o.id)} className="space-y-3">
+                {manualObjects.map((obj) => (
+                  <AccordionItem key={obj.id} value={obj.id} className="border rounded-lg px-4">
+                    <AccordionTrigger className="hover:no-underline py-4">
+                      <div className="flex items-center gap-3">
+                        <FileSpreadsheet className="w-5 h-5 text-muted-foreground" />
+                        <span className="font-medium">{obj.name || "Unnamed object"}</span>
+                        <span className="text-sm text-muted-foreground">
+                          ({obj.fields.length} field{obj.fields.length !== 1 ? "s" : ""})
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-4 space-y-3">
+                      {obj.fields.map((field) => (
+                        <div key={field.id} className="p-3 rounded-md border bg-muted/20 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-muted-foreground">Field</span>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeField(obj.id, field.id)}>
+                              <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">Field name *</Label>
+                              <Input 
+                                placeholder="e.g., Invoice Number" 
+                                value={field.name}
+                                onChange={(e) => updateField(obj.id, field.id, { name: e.target.value })}
+                                className="h-9"
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">Type</Label>
+                              <Select value={field.type} onValueChange={(v) => updateField(obj.id, field.id, { type: v })}>
+                                <SelectTrigger className="h-9">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {fieldTypes.map(ft => (
+                                    <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Extraction prompt (optional)</Label>
+                            <Input 
+                              placeholder="Describe how to extract this field..."
+                              value={field.prompt}
+                              onChange={(e) => updateField(obj.id, field.id, { prompt: e.target.value })}
+                              className="h-9"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                      <Button variant="outline" size="sm" onClick={() => addFieldToObject(obj.id)}>
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add field
+                      </Button>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Manual Step 5: Relationships */}
+        {currentStep === 5 && creationMode === "manual" && (
+          <div className="space-y-6">
+            <Card className="shadow-card">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Link2 className="w-5 h-5 text-muted-foreground" />
+                  <CardTitle>Object relationships</CardTitle>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Link related objects for structured, multi-row data
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="text-sm text-muted-foreground space-y-2">
+                  <p>Define how your objects relate to each other.</p>
+                  <p>This is useful when one object contains main records and another contains multiple related rows.</p>
+                </div>
+
+                {manualRelationships.length === 0 && (
+                  <div className="text-center py-6 text-sm text-muted-foreground">
+                    <p>No relationships defined.</p>
+                    <p className="text-xs mt-1">If your objects are independent, you can skip this step.</p>
+                  </div>
+                )}
+
+                {manualRelationships.map((rel, index) => (
+                  <div key={index} className="p-4 rounded-lg border bg-background space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Relationship {index + 1}</span>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeManualRelationship(index)}>
+                        <Trash2 className="w-4 h-4 text-muted-foreground" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Parent (master) object</Label>
+                        <p className="text-xs text-muted-foreground">Contains the main record</p>
+                        <Select value={rel.parentObjectId} onValueChange={(v) => updateManualRelationship(index, { parentObjectId: v })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select parent object" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {manualObjects.filter(o => o.id !== rel.childObjectId).map(o => (
+                              <SelectItem key={o.id} value={o.id}>{o.name || "Unnamed"}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Child (related) object</Label>
+                        <p className="text-xs text-muted-foreground">Contains repeated rows</p>
+                        <Select value={rel.childObjectId} onValueChange={(v) => updateManualRelationship(index, { childObjectId: v })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select child object" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {manualObjects.filter(o => o.id !== rel.parentObjectId).map(o => (
+                              <SelectItem key={o.id} value={o.id}>{o.name || "Unnamed"}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Link field</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Choose the column used to link records (e.g. Invoice number)
+                      </p>
+                      <Input 
+                        placeholder="e.g., Invoice Number" 
+                        value={rel.linkField}
+                        onChange={(e) => updateManualRelationship(index, { linkField: e.target.value })}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>Relationship type:</span>
+                      <Badge variant="outline" className="text-xs">One-to-many</Badge>
+                    </div>
+                  </div>
+                ))}
+
+                <Button variant="outline" className="w-full" onClick={addManualRelationship} disabled={manualObjects.length < 2}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add relationship
+                </Button>
+
+                <p className="text-sm text-muted-foreground">
+                  During extraction, DocServant will group related rows under their parent record and return structured output.
+                </p>
+              </CardContent>
+            </Card>
+
+            <div className="text-center text-sm text-muted-foreground space-y-1">
+              <p>Most templates don't need relationships.</p>
+              <p>If your objects are independent, you can safely skip this step.</p>
+            </div>
+          </div>
+        )}
+
         {/* Navigation */}
         <div className="flex items-center justify-between mt-8">
           <Button
@@ -765,22 +1226,13 @@ export default function TemplateNew() {
             Back
           </Button>
 
-          {currentStep < 5 ? (
+          {currentStep < totalSteps ? (
             <Button
               onClick={() => setCurrentStep(prev => prev + 1)}
               disabled={!canProceed()}
             >
-              {currentStep === 4 ? (
-                <>
-                  Continue
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </>
-              ) : (
-                <>
-                  Continue
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </>
-              )}
+              Continue
+              <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           ) : (
             <Button
