@@ -45,19 +45,17 @@ type CreationMode = "excel" | "manual" | null;
 
 const excelSteps = [
   { id: 1, title: "Basics", description: "Name and settings" },
-  { id: 2, title: "Creation mode", description: "Choose your path" },
-  { id: 3, title: "Upload Schema", description: "Upload Excel file" },
-  { id: 4, title: "Select Sheets", description: "Choose sheets to use" },
-  { id: 5, title: "Sheet relationships", description: "Link related sheets" },
-  { id: 6, title: "Select Columns", description: "Choose columns per sheet" },
+  { id: 2, title: "Upload Schema", description: "Upload Excel file" },
+  { id: 3, title: "Select Sheets", description: "Choose sheets to use" },
+  { id: 4, title: "Sheet relationships", description: "Link related sheets" },
+  { id: 5, title: "Select Columns", description: "Choose columns per sheet" },
 ];
 
 const manualSteps = [
   { id: 1, title: "Basics", description: "Name and settings" },
-  { id: 2, title: "Creation mode", description: "Choose your path" },
-  { id: 3, title: "Define Objects", description: "Create data objects" },
-  { id: 4, title: "Define Fields", description: "Add fields to objects" },
-  { id: 5, title: "Relationships", description: "Link related objects" },
+  { id: 2, title: "Define Objects", description: "Create data objects" },
+  { id: 3, title: "Define Fields", description: "Add fields to objects" },
+  { id: 4, title: "Relationships", description: "Link related objects" },
 ];
 
 // Mock detected schema after upload
@@ -277,23 +275,22 @@ export default function TemplateNew() {
 
   const canProceed = () => {
     if (currentStep === 1) return templateName.trim().length > 0;
-    if (currentStep === 2) return creationMode !== null;
 
     if (creationMode === "excel") {
       switch (currentStep) {
-        case 3: return detectedSchema !== null;
-        case 4: return selectedSheets.length > 0;
-        case 5: return true;
-        case 6: return selectedSheets.some(sheetId => (selectedColumns[sheetId]?.length || 0) > 0);
+        case 2: return detectedSchema !== null;
+        case 3: return selectedSheets.length > 0;
+        case 4: return true;
+        case 5: return selectedSheets.some(sheetId => (selectedColumns[sheetId]?.length || 0) > 0);
         default: return false;
       }
     }
 
     if (creationMode === "manual") {
       switch (currentStep) {
-        case 3: return manualObjects.length > 0 && manualObjects.every(o => o.name.trim().length > 0);
-        case 4: return manualObjects.some(o => o.fields.length > 0 && o.fields.every(f => f.name.trim().length > 0));
-        case 5: return true;
+        case 2: return manualObjects.length > 0 && manualObjects.every(o => o.name.trim().length > 0);
+        case 3: return manualObjects.some(o => o.fields.length > 0 && o.fields.every(f => f.name.trim().length > 0));
+        case 4: return true;
         default: return false;
       }
     }
@@ -318,6 +315,145 @@ export default function TemplateNew() {
           </Button>
         }
       />
+    );
+  }
+
+  // If no creation mode selected, show mode selection screen
+  if (!creationMode) {
+    return (
+      <div className="min-h-full bg-muted/30">
+        {/* Header */}
+        <div className="border-b bg-background">
+          <div className="max-w-4xl mx-auto px-6 py-4">
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => navigate("/app/templates")}
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <div>
+                <h1 className="text-xl font-semibold">Create Template</h1>
+                <p className="text-sm text-muted-foreground">
+                  Set up a new extraction template
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mode Selection */}
+        <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+          <div className="text-center space-y-2">
+            <h2 className="text-xl font-semibold">Choose how to create your template</h2>
+            <p className="text-sm text-muted-foreground">
+              Both options produce the same result — pick what fits your workflow best.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Card A: Excel */}
+            <Card 
+              className="cursor-pointer transition-all hover:shadow-md relative hover:border-muted-foreground/30"
+              onClick={() => setCreationMode("excel")}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
+                    <FileSpreadsheet className="w-5 h-5 text-accent-foreground" />
+                  </div>
+                  <Badge variant="secondary" className="text-xs">Recommended</Badge>
+                </div>
+                <CardTitle className="text-lg mt-3">Upload Excel schema</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Start from a spreadsheet that defines your desired output structure.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <span>Define sheets, columns, and relationships visually</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <span>Fastest way to get a working template</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <span>Ideal for invoices, statements, reports, and tabular data</span>
+                  </li>
+                </ul>
+                <p className="text-xs text-muted-foreground border-t pt-3">
+                  You can still edit prompts, relationships, and fields manually after this step.
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCreationMode("excel");
+                  }}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Excel file
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Card B: Manual */}
+            <Card 
+              className="cursor-pointer transition-all hover:shadow-md hover:border-muted-foreground/30"
+              onClick={() => setCreationMode("manual")}
+            >
+              <CardHeader className="pb-3">
+                <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
+                  <PenLine className="w-5 h-5 text-accent-foreground" />
+                </div>
+                <CardTitle className="text-lg mt-3">Create template manually</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Define your structure from scratch using prompts and custom objects.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <span>Create objects one by one (similar to sheets)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <span>Define fields, prompts, and relationships explicitly</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <span>Best for APIs, dynamic schemas, and advanced use cases</span>
+                  </li>
+                </ul>
+                <p className="text-xs text-muted-foreground border-t pt-3">
+                  This works like DocServant for Salesforce — but fully customizable.
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCreationMode("manual");
+                  }}
+                >
+                  <PenLine className="w-4 h-4 mr-2" />
+                  Create manually
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          <p className="text-center text-sm text-muted-foreground">
+            You're not locked in — you can add Excel schemas later or continue editing everything manually.
+          </p>
+        </div>
+      </div>
     );
   }
 
@@ -458,133 +594,10 @@ export default function TemplateNew() {
           </Card>
         )}
 
-        {/* Step 2: Creation Mode */}
-        {currentStep === 2 && (
-          <div className="space-y-6">
-            <div className="text-center space-y-2">
-              <h2 className="text-xl font-semibold">Choose how to create your template</h2>
-              <p className="text-sm text-muted-foreground">
-                Both options produce the same result — pick what fits your workflow best.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Card A: Excel */}
-              <Card 
-                className={cn(
-                  "cursor-pointer transition-all hover:shadow-md relative",
-                  creationMode === "excel" 
-                    ? "border-primary ring-2 ring-primary/20" 
-                    : "hover:border-muted-foreground/30"
-                )}
-                onClick={() => setCreationMode("excel")}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
-                      <FileSpreadsheet className="w-5 h-5 text-accent-foreground" />
-                    </div>
-                    <Badge variant="secondary" className="text-xs">Recommended</Badge>
-                  </div>
-                  <CardTitle className="text-lg mt-3">Upload Excel schema</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Start from a spreadsheet that defines your desired output structure.
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li className="flex items-start gap-2">
-                      <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                      <span>Define sheets, columns, and relationships visually</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                      <span>Fastest way to get a working template</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                      <span>Ideal for invoices, statements, reports, and tabular data</span>
-                    </li>
-                  </ul>
-                  <p className="text-xs text-muted-foreground border-t pt-3">
-                    You can still edit prompts, relationships, and fields manually after this step.
-                  </p>
-                  <Button 
-                    variant={creationMode === "excel" ? "default" : "outline"} 
-                    className="w-full"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCreationMode("excel");
-                    }}
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload Excel file
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Card B: Manual */}
-              <Card 
-                className={cn(
-                  "cursor-pointer transition-all hover:shadow-md",
-                  creationMode === "manual" 
-                    ? "border-primary ring-2 ring-primary/20" 
-                    : "hover:border-muted-foreground/30"
-                )}
-                onClick={() => setCreationMode("manual")}
-              >
-                <CardHeader className="pb-3">
-                  <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
-                    <PenLine className="w-5 h-5 text-accent-foreground" />
-                  </div>
-                  <CardTitle className="text-lg mt-3">Create template manually</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Define your structure from scratch using prompts and custom objects.
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li className="flex items-start gap-2">
-                      <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                      <span>Create objects one by one (similar to sheets)</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                      <span>Define fields, prompts, and relationships explicitly</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                      <span>Best for APIs, dynamic schemas, and advanced use cases</span>
-                    </li>
-                  </ul>
-                  <p className="text-xs text-muted-foreground border-t pt-3">
-                    This works like DocServant for Salesforce — but fully customizable.
-                  </p>
-                  <Button 
-                    variant={creationMode === "manual" ? "default" : "outline"} 
-                    className="w-full"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCreationMode("manual");
-                    }}
-                  >
-                    <PenLine className="w-4 h-4 mr-2" />
-                    Create manually
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-
-            <p className="text-center text-sm text-muted-foreground">
-              You're not locked in — you can add Excel schemas later or continue editing everything manually.
-            </p>
-          </div>
-        )}
-
         {/* ==================== EXCEL PATH ==================== */}
 
-        {/* Excel Step 3: Upload Schema */}
-        {currentStep === 3 && creationMode === "excel" && (
+        {/* Excel Step 2: Upload Schema */}
+        {currentStep === 2 && creationMode === "excel" && (
           <Card className="shadow-card">
             <CardHeader>
               <CardTitle>Upload Excel Schema</CardTitle>
@@ -670,8 +683,8 @@ export default function TemplateNew() {
           </Card>
         )}
 
-        {/* Excel Step 4: Select Sheets */}
-        {currentStep === 4 && creationMode === "excel" && detectedSchema && (
+        {/* Excel Step 3: Select Sheets */}
+        {currentStep === 3 && creationMode === "excel" && detectedSchema && (
           <Card className="shadow-card">
             <CardHeader>
               <CardTitle>Select Sheets</CardTitle>
@@ -717,8 +730,8 @@ export default function TemplateNew() {
           </Card>
         )}
 
-        {/* Excel Step 5: Sheet Relationships */}
-        {currentStep === 5 && creationMode === "excel" && detectedSchema && (
+        {/* Excel Step 4: Sheet Relationships */}
+        {currentStep === 4 && creationMode === "excel" && detectedSchema && (
           <div className="space-y-6">
             <Card className="shadow-card">
               <CardHeader>
@@ -866,7 +879,7 @@ export default function TemplateNew() {
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => setCurrentStep(6)}
+                    onClick={() => setCurrentStep(5)}
                     className="gap-1"
                   >
                     <SkipForward className="w-4 h-4" />
@@ -883,8 +896,8 @@ export default function TemplateNew() {
           </div>
         )}
 
-        {/* Excel Step 6: Select Columns */}
-        {currentStep === 6 && creationMode === "excel" && detectedSchema && (
+        {/* Excel Step 5: Select Columns */}
+        {currentStep === 5 && creationMode === "excel" && detectedSchema && (
           <Card className="shadow-card">
             <CardHeader>
               <CardTitle>Select Columns</CardTitle>
@@ -975,8 +988,8 @@ export default function TemplateNew() {
 
         {/* ==================== MANUAL PATH ==================== */}
 
-        {/* Manual Step 3: Define Objects */}
-        {currentStep === 3 && creationMode === "manual" && (
+        {/* Manual Step 2: Define Objects */}
+        {currentStep === 2 && creationMode === "manual" && (
           <Card className="shadow-card">
             <CardHeader>
               <CardTitle>Define Objects</CardTitle>
@@ -1037,8 +1050,8 @@ export default function TemplateNew() {
           </Card>
         )}
 
-        {/* Manual Step 4: Define Fields */}
-        {currentStep === 4 && creationMode === "manual" && (
+        {/* Manual Step 3: Define Fields */}
+        {currentStep === 3 && creationMode === "manual" && (
           <Card className="shadow-card">
             <CardHeader>
               <CardTitle>Define Fields</CardTitle>
@@ -1115,8 +1128,8 @@ export default function TemplateNew() {
           </Card>
         )}
 
-        {/* Manual Step 5: Relationships */}
-        {currentStep === 5 && creationMode === "manual" && (
+        {/* Manual Step 4: Relationships */}
+        {currentStep === 4 && creationMode === "manual" && (
           <div className="space-y-6">
             <Card className="shadow-card">
               <CardHeader>
@@ -1219,8 +1232,13 @@ export default function TemplateNew() {
         <div className="flex items-center justify-between mt-8">
           <Button
             variant="outline"
-            onClick={() => setCurrentStep(prev => prev - 1)}
-            disabled={currentStep === 1}
+            onClick={() => {
+              if (currentStep === 1) {
+                setCreationMode(null);
+              } else {
+                setCurrentStep(prev => prev - 1);
+              }
+            }}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
