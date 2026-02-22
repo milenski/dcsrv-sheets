@@ -299,7 +299,7 @@ export default function TemplateNew() {
   };
 
   const handleCreate = () => {
-    navigate("/app/templates/1");
+    navigate("/app/templates/1", { state: { fromWizard: true } });
   };
 
   const totalSelectedColumns = Object.values(selectedColumns).flat().length;

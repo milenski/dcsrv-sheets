@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { 
   ArrowLeft, 
   Play, 
@@ -123,6 +123,21 @@ export default function TemplateDetail() {
   const [templateApiAccess, setTemplateApiAccess] = useState<"inherit" | "enabled" | "disabled">(template.apiAccess);
   const [showOutputModeDialog, setShowOutputModeDialog] = useState(false);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const location = useLocation();
+  const fromWizard = location.state?.fromWizard === true;
+  const [activeTab, setActiveTab] = useState(fromWizard ? "prompts" : "overview");
+  const [showPromptHint, setShowPromptHint] = useState(fromWizard);
+
+  useEffect(() => {
+    if (fromWizard) {
+      toast.success("Template created successfully!", {
+        description: "Now configure your extraction prompts to tell DocServant what to look for.",
+        duration: 6000,
+      });
+      // Clear the state so refreshing doesn't re-trigger
+      window.history.replaceState({}, document.title);
+    }
+  }, [fromWizard]);
 
   // Permission guard for Members
   if (!canManage) {
@@ -291,7 +306,7 @@ export default function TemplateDetail() {
 
       {/* Tabs */}
       <div className="max-w-6xl mx-auto px-6 py-6">
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="sheets">Sheets</TabsTrigger>
@@ -495,6 +510,25 @@ export default function TemplateDetail() {
 
           {/* Prompts Tab */}
           <TabsContent value="prompts" className="space-y-6">
+            {showPromptHint && (
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 flex items-start gap-3">
+                <MessageSquare className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Configure your prompts</p>
+                  <p className="text-sm text-muted-foreground">
+                    Prompts tell DocServant exactly what to extract from your documents. Start with the template-level prompt for global instructions, then refine per sheet and column.
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-1 h-7 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPromptHint(false)}
+                  >
+                    Dismiss
+                  </Button>
+                </div>
+              </div>
+            )}
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="text-base">Template-Level Prompt</CardTitle>
